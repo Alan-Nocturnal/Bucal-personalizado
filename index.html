@@ -194,46 +194,69 @@
 
     const mouthguardGroup = new THREE.Group();
 
-    // 3. Generación de la canaleta
-    function buildRealChannelMouthguard(scale = 1.0, offsetY = 0.0) {
+    // 3. CANALETA EN FORMA DE "U" REAL
+    function buildRealChannelMouthguard(scale = 1.0, inset = 0.0) {
+      // PERFIL TRANSVERSAL EN FORMA DE U
       const shape = new THREE.Shape();
-      
-      shape.moveTo(-0.6 * scale, 0.0 + offsetY);
-      shape.lineTo(-0.6 * scale, 1.4 * scale + offsetY);
-      shape.lineTo(-0.35 * scale, 1.4 * scale + offsetY);
-      shape.lineTo(-0.3 * scale, 0.35 * scale + offsetY);
-      shape.lineTo(0.3 * scale, 0.35 * scale + offsetY);
-      shape.lineTo(0.35 * scale, 0.9 * scale + offsetY);
-      shape.lineTo(0.6 * scale, 0.9 * scale + offsetY);
-      shape.lineTo(0.6 * scale, 0.0 + offsetY);
+      const wallHeight = 1.1 * scale;
+      const baseWidth = 1.0 * scale;
+      const wallThickness = 0.18 * scale;
+      const floorThickness = 0.15 * scale;
+
+      // Desplazamiento interior para la canaleta
+      const shift = inset;
+
+      // Pared exterior (más alta)
+      shape.moveTo(-baseWidth/2 - shift, 0);
+      shape.lineTo(-baseWidth/2 - shift, wallHeight);
+      shape.lineTo(-baseWidth/2 + wallThickness - shift, wallHeight);
+      shape.lineTo(-baseWidth/2 + wallThickness - shift, floorThickness);
+
+      // Piso de la canaleta
+      shape.lineTo(baseWidth/2 - wallThickness + shift, floorThickness);
+
+      // Pared interior (más baja, hacia el paladar)
+      shape.lineTo(baseWidth/2 - wallThickness + shift, wallHeight * 0.65);
+      shape.lineTo(baseWidth/2 + shift, wallHeight * 0.65);
+      shape.lineTo(baseWidth/2 + shift, 0);
+
       shape.closePath();
 
+      // ARCADA DENTAL: forma de U vista desde arriba
       const curve = new THREE.CatmullRomCurve3([
-        new THREE.Vector3(-2.5, 0, -1.2),
-        new THREE.Vector3(-2.1, 0, 1.1),
-        new THREE.Vector3(-1.1, 0, 2.1),
-        new THREE.Vector3(0.0, 0, 2.4),
-        new THREE.Vector3(1.1, 0, 2.1),
-        new THREE.Vector3(2.1, 0, 1.1),
-        new THREE.Vector3(2.5, 0, -1.2)
-      ], true);
+        new THREE.Vector3(-2.6, 0, -1.0),
+        new THREE.Vector3(-2.2, 0, 0.8),
+        new THREE.Vector3(-1.2, 0, 1.8),
+        new THREE.Vector3(0.0, 0, 2.1),
+        new THREE.Vector3(1.2, 0, 1.8),
+        new THREE.Vector3(2.2, 0, 0.8),
+        new THREE.Vector3(2.6, 0, -1.0)
+      ], false); // curva ABIERTA = forma de U, no anillo
 
       const extrudeSettings = {
-        steps: 150,
+        steps: 160,
         bevelEnabled: true,
         bevelSegments: 3,
-        bevelSize: 0.03,
-        bevelThickness: 0.03,
-        extrudePath: curve
+        bevelSize: 0.025,
+        bevelThickness: 0.025,
+        extrudePath: curve,
+        // EVITAR DEFORMACIÓN DEL PERFIL
+        extrudeRotate: 0 // ¡Clave! Evita que el perfil rote y se deforme
       };
 
-      return new THREE.ExtrudeGeometry(shape, extrudeSettings);
+      const geometry = new THREE.ExtrudeGeometry(shape, extrudeSettings);
+      geometry.center();
+      return geometry;
     }
 
-    const outerMesh = new THREE.Mesh(buildRealChannelMouthguard(), extMat);
+    // Pared exterior
+    const outerGeo = buildRealChannelMouthguard(1.0, 0);
+    const outerMesh = new THREE.Mesh(outerGeo, extMat);
     mouthguardGroup.add(outerMesh);
 
-    const innerMesh = new THREE.Mesh(buildRealChannelMouthguard(0.94, 0.06), intMat);
+    // Interior de la canaleta (hueco donde van los dientes)
+    const innerGeo = buildRealChannelMouthguard(0.94, 0.06);
+    const innerMesh = new THREE.Mesh(innerGeo, intMat);
     mouthguardGroup.add(innerMesh);
 
     scene.add(mouthguardGroup);
@@ -292,9 +315,9 @@
     // 6. Cámaras
     function setView(type) {
       if (type === 'front') camera.position.set(0, 0.8, 6.2);
-      else if (type === 'top') camera.position.set(0, 7, 0.1);
-      else if (type === 'iso') camera.position.set(4.5, 4.5, 4.5);
-      controls.target.set(0, 0.6, 0);
+      else if (type === 'top') camera.position.set(0, 5, 0.1);
+      else if (type === 'iso') camera.position.set(4.5, 4, 4.5);
+      controls.target.set(0, 0.4, 0);
       controls.update();
     }
 
@@ -314,7 +337,6 @@
         msg.classList.add('show');
         setTimeout(() => msg.classList.remove('show'), 2500);
       }).catch(() => {
-        // Alternativa si falla el permiso
         const ta = document.getElementById('fullCode');
         ta.value = fullHTML;
         ta.select();
