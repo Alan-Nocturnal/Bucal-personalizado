@@ -3,17 +3,17 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <title>Protector Bucal 3D Real</title>
+  <title>Protector Bucal 3D Profesional</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; }
-    body { background: #0a0a0a; color: #fff; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
+    body { background: #080808; color: #fff; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
     
     #viewport {
       width: 100vw;
       height: 55vh;
-      background: radial-gradient(circle at center, #222222 0%, #050505 100%);
+      background: radial-gradient(circle at center, #252525 0%, #030303 100%);
       touch-action: none;
     }
     
@@ -27,7 +27,7 @@
     }
 
     .group {
-      background: #181818;
+      background: #141414;
       padding: 10px 12px;
       border-radius: 8px;
       border: 1px solid #282828;
@@ -65,12 +65,12 @@
       font-size: 0.85rem;
     }
 
-    .btn-dark { background: #262626; color: #ccc; }
+    .btn-dark { background: #222; color: #ccc; }
 
     input[type="file"] { display: none; }
     .file-btn {
       display: block;
-      background: #222;
+      background: #1f1f1f;
       color: #eee;
       text-align: center;
       padding: 10px;
@@ -87,27 +87,27 @@
 
   <div class="panel">
     <div class="group">
-      <label>Colores del Bucal</label>
+      <label>Personalización de Colores</label>
       <div class="row">
-        <span>Carcasa / Pared Exterior (Azul en tu dibujo)</span>
-        <input type="color" id="extColor" value="#0088ff">
+        <span>Escudo Frontal (Carcasa Externa)</span>
+        <input type="color" id="extColor" value="#ffffff">
       </div>
       <div class="row" style="margin-top: 6px;">
-        <span>Canaleta Dientes (Rojo en tu dibujo)</span>
-        <input type="color" id="intColor" value="#e50914">
+        <span>Gel Interior (Canaleta de Dientes)</span>
+        <input type="color" id="intColor" value="#cc0000">
       </div>
     </div>
 
     <div class="group">
-      <label>Logo / Gráfico Frontal</label>
-      <label for="imgInput" class="file-btn">📁 Subir Imagen (PNG/JPG)</label>
+      <label>Diseño / Logo Frontal</label>
+      <label for="imgInput" class="file-btn">📁 Cargar Imagen Frontal</label>
       <input type="file" id="imgInput" accept="image/*">
     </div>
 
     <div class="row">
       <button class="btn btn-dark" onclick="setView('front')">Frente</button>
-      <button class="btn btn-dark" onclick="setView('top')">Ver Canaleta</button>
-      <button class="btn btn-dark" onclick="setView('iso')">Perspectiva 3D</button>
+      <button class="btn btn-dark" onclick="setView('top')">Canaleta Dientes</button>
+      <button class="btn btn-dark" onclick="setView('iso')">Vista 3D</button>
     </div>
 
     <button class="btn" onclick="exportPNG()">💾 Guardar Imagen PNG</button>
@@ -117,7 +117,7 @@
     // 1. Escena
     const container = document.getElementById('viewport');
     const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
+    const camera = new THREE.PerspectiveCamera(40, container.clientWidth / container.clientHeight, 0.1, 1000);
     
     const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
     renderer.setSize(container.clientWidth, container.clientHeight);
@@ -130,82 +130,85 @@
     controls.dampingFactor = 0.05;
 
     // Iluminación
-    const light1 = new THREE.DirectionalLight(0xffffff, 1.2);
+    const light1 = new THREE.DirectionalLight(0xffffff, 1.4);
     light1.position.set(5, 10, 7);
     scene.add(light1);
 
-    const light2 = new THREE.DirectionalLight(0xffffff, 0.6);
-    light2.position.set(-5, 4, -5);
+    const light2 = new THREE.DirectionalLight(0xffffff, 0.5);
+    light2.position.set(-5, -2, -5);
     scene.add(light2);
 
-    scene.add(new THREE.AmbientLight(0xffffff, 0.7));
+    scene.add(new THREE.AmbientLight(0xffffff, 0.6));
 
     // 2. Materiales
     const extMat = new THREE.MeshStandardMaterial({
-      color: 0x0088ff,
-      roughness: 0.25,
-      metalness: 0.1
+      color: 0xffffff,
+      roughness: 0.2,
+      metalness: 0.05
     });
 
     const intMat = new THREE.MeshStandardMaterial({
-      color: 0xe50914,
-      roughness: 0.3,
+      color: 0xcc0000,
+      roughness: 0.35,
       metalness: 0.0
     });
 
     const mouthguardGroup = new THREE.Group();
 
-    // 3. Creación precisa de la canaleta en "U" para los dientes superiores
-    // Dibujamos el perfil del canal (Corte transversal)
-    const profileShape = new THREE.Shape();
-    // (x, y) donde y es la altura vertical del bucal
-    profileShape.moveTo(0.0, 0.0);       // Base exterior del bucal
-    profileShape.lineTo(0.2, 0.0);       // Borde inferior
-    profileShape.lineTo(0.25, 0.2);      // Suelo del canal dental (ROJO)
-    profileShape.lineTo(0.6, 0.2);       // Ancho donde se apoyan los dientes
-    profileShape.lineTo(0.65, 0.8);      // Pared trasera (paladar)
-    profileShape.lineTo(0.45, 0.8);      // Grosor pared trasera
-    profileShape.lineTo(0.4, 0.35);      // Bajada interior del canal
-    profileShape.lineTo(0.1, 0.35);      // Fondo del hueco
-    profileShape.lineTo(-0.1, 1.3);      // Pared exterior frontal alta (AZUL - protege incisivos)
-    profileShape.lineTo(-0.35, 1.2);     // Borde suave superior
-    profileShape.closePath();
+    // 3. Geometría Precisa: Canaleta en U profunda (Estilo Venum / Custom MMA)
+    function generateMouthguardMesh() {
+      // Perfil transversal de la canaleta con pared frontal curva alta y canal hueco arriba
+      const shape = new THREE.Shape();
+      shape.moveTo(-0.4, 0.0);        // Pared frontal interior
+      shape.lineTo(-0.5, 1.2);       // Altura pared frontal exterior
+      shape.lineTo(-0.2, 1.3);       // Borde superior biselado de la encía
+      shape.lineTo(-0.1, 0.3);       // Fondo de la canaleta donde descansan los dientes
+      shape.lineTo(0.3, 0.3);        // Ancho del piso para molares/incisivos
+      shape.lineTo(0.4, 0.8);        // Pared trasera (lado del paladar)
+      shape.lineTo(0.6, 0.7);        // Borde pared trasera
+      shape.lineTo(0.5, 0.0);        // Base exterior de mordida
+      shape.closePath();
 
-    // Curva del arco dentario humano (Forma de U visto desde arriba)
-    const arcPath = new THREE.CatmullRomCurve3([
-      new THREE.Vector3(-2.5, 0, -1.2),
-      new THREE.Vector3(-2.0, 0, 1.2),
-      new THREE.Vector3(0, 0, 2.2),
-      new THREE.Vector3(2.0, 0, 1.2),
-      new THREE.Vector3(2.5, 0, -1.2)
-    ]);
+      // Recorrido parabólico en "U" exacto a la dentadura humana
+      const curve = new THREE.CatmullRomCurve3([
+        new THREE.Vector3(-2.4, 0, -1.0),
+        new THREE.Vector3(-2.1, 0, 1.0),
+        new THREE.Vector3(-1.2, 0, 2.0),
+        new THREE.Vector3(0.0, 0, 2.3),
+        new THREE.Vector3(1.2, 0, 2.0),
+        new THREE.Vector3(2.1, 0, 1.0),
+        new THREE.Vector3(2.4, 0, -1.0)
+      ]);
 
-    const extrudeSettings = {
-      steps: 80,
-      bevelEnabled: true,
-      bevelSegments: 3,
-      bevelSize: 0.03,
-      bevelThickness: 0.03,
-      extrudePath: arcPath
-    };
+      const extrudeSettings = {
+        steps: 100,
+        bevelEnabled: true,
+        bevelSegments: 4,
+        bevelSize: 0.04,
+        bevelThickness: 0.04,
+        extrudePath: curve
+      };
 
-    // Generamos la carcasa exterior (AZUL)
-    const extGeo = new THREE.ExtrudeGeometry(profileShape, extrudeSettings);
-    extGeo.center();
-    const outerMesh = new THREE.Mesh(extGeo, extMat);
+      const geo = new THREE.ExtrudeGeometry(shape, extrudeSettings);
+      geo.center();
+      return geo;
+    }
+
+    const baseGeo = generateMouthguardMesh();
+
+    // Carcasa exterior rígida
+    const outerMesh = new THREE.Mesh(baseGeo, extMat);
     mouthguardGroup.add(outerMesh);
 
-    // Generamos la canaleta interior ahuecada (ROJA)
-    const intGeo = new THREE.ExtrudeGeometry(profileShape, extrudeSettings);
-    intGeo.center();
-    const innerMesh = new THREE.Mesh(intGeo, intMat);
-    innerMesh.scale.set(0.98, 0.98, 0.98);
-    innerMesh.position.y = 0.02; // Ligeramente desfasado para mostrar el recubrimiento
+    // Revestimiento interior de gel (rojo en la canaleta)
+    const innerMesh = new THREE.Mesh(baseGeo, intMat);
+    innerMesh.scale.set(0.97, 0.97, 0.97);
+    innerMesh.position.set(0, 0.02, -0.02);
     mouthguardGroup.add(innerMesh);
 
     scene.add(mouthguardGroup);
 
-    // 4. Carga e inserción de Logo en la cara exterior
+    // 4. Mapeo del Logo Frontal sobre la curva
     let logoMesh;
     document.getElementById('imgInput').addEventListener('change', function(e) {
       const file = e.target.files[0];
@@ -215,14 +218,14 @@
       reader.onload = function(event) {
         new THREE.TextureLoader().load(event.target.result, (texture) => {
           if (!logoMesh) {
-            const planeGeo = new THREE.PlaneGeometry(1.4, 0.7);
+            const planeGeo = new THREE.PlaneGeometry(1.6, 0.9);
             const planeMat = new THREE.MeshBasicMaterial({
               map: texture,
               transparent: true,
               depthTest: true
             });
             logoMesh = new THREE.Mesh(planeGeo, planeMat);
-            logoMesh.position.set(0, 0.1, 2.35); // Apoyado sobre la pared azul frontal
+            logoMesh.position.set(0, 0.1, 2.42); // Apoyado directo en la pared curva frontal
             mouthguardGroup.add(logoMesh);
           } else {
             logoMesh.material.map = texture;
@@ -234,7 +237,7 @@
       reader.readAsDataURL(file);
     });
 
-    // 5. Ajustes de Color
+    // 5. Manejadores de Color
     document.getElementById('extColor').addEventListener('input', (e) => {
       extMat.color.set(e.target.value);
     });
@@ -243,14 +246,14 @@
       intMat.color.set(e.target.value);
     });
 
-    // 6. Vista y Cámara
+    // 6. Configuración de Cámaras y Exportación
     function setView(type) {
       if (type === 'front') {
-        camera.position.set(0, 0.1, 6.0);
+        camera.position.set(0, 0.1, 6.2);
       } else if (type === 'top') {
-        camera.position.set(0, 6.0, 0.1); // Muestra perfectamente la canaleta roja vacía para los dientes
+        camera.position.set(0, 6.2, 0.1); // Vista desde arriba mostrando la canaleta vacía de gel
       } else if (type === 'iso') {
-        camera.position.set(3.5, 2.8, 4.5); // Vista inclinada exacta a tu dibujo
+        camera.position.set(3.2, 3.0, 4.8);
       }
       controls.target.set(0, 0, 0);
       controls.update();
@@ -260,7 +263,7 @@
       renderer.render(scene, camera);
       const dataURL = renderer.domElement.toDataURL('image/png');
       const link = document.createElement('a');
-      link.download = 'mi-bucal-3d.png';
+      link.download = 'bucal-profesional-3d.png';
       link.href = dataURL;
       link.click();
     }
