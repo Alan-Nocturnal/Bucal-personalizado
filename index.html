@@ -3,147 +3,180 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <title>Personalizador de Bucales de Boxeo</title>
-  <!-- Fabric.js para manipulación interactiva de canvas -->
+  <title>Personalizador Realista de Bucales</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; }
     body { background-color: #121212; color: #fff; display: flex; flex-direction: column; align-items: center; min-height: 100vh; padding: 12px; }
-    h1 { font-size: 1.2rem; margin-bottom: 12px; text-align: center; }
+    h1 { font-size: 1.2rem; margin-bottom: 12px; text-align: center; color: #ffffff; }
     
     .canvas-container-wrapper {
       position: relative;
-      width: 320px;
+      width: 340px;
       height: 320px;
-      box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.6);
       border-radius: 12px;
       overflow: hidden;
-      background: #1e1e1e;
+      background: radial-gradient(circle, #2a2a2a 0%, #111111 100%);
+      display: flex;
+      justify-content: center;
+      align-items: center;
     }
     
     .controls {
       width: 100%;
-      max-width: 360px;
-      margin-top: 16px;
+      max-width: 350px;
+      margin-top: 14px;
       display: flex;
       flex-direction: column;
-      gap: 12px;
+      gap: 10px;
     }
 
     .control-group {
-      background: #2a2a2a;
-      padding: 12px;
+      background: #222222;
+      padding: 10px 14px;
       border-radius: 8px;
+      border: 1px solid #333;
     }
 
     .control-group label {
       display: block;
       font-size: 0.85rem;
-      margin-bottom: 8px;
-      color: #ccc;
+      margin-bottom: 6px;
+      color: #bbb;
+      font-weight: 600;
     }
 
-    .color-picker-row {
+    .row {
       display: flex;
-      gap: 8px;
+      gap: 10px;
       align-items: center;
     }
 
     input[type="color"] {
       border: none;
-      width: 40px;
-      height: 40px;
+      width: 36px;
+      height: 36px;
       border-radius: 50%;
       cursor: pointer;
       background: none;
+    }
+
+    input[type="text"] {
+      flex: 1;
+      padding: 8px;
+      background: #111;
+      border: 1px solid #444;
+      color: #fff;
+      border-radius: 6px;
     }
 
     .btn {
       background: #e50914;
       color: white;
       border: none;
-      padding: 12px;
+      padding: 11px;
       border-radius: 6px;
       font-weight: bold;
       width: 100%;
       cursor: pointer;
       text-align: center;
+      font-size: 0.9rem;
     }
 
-    .btn-secondary {
-      background: #333;
-      margin-top: 6px;
-    }
+    .btn-secondary { background: #333; color: #ddd; }
+    .btn-action { background: #2563eb; color: #fff; }
 
     input[type="file"] { display: none; }
     .file-label {
       display: block;
-      background: #3a3a3a;
+      background: #2a2a2a;
+      border: 1px dashed #555;
       color: white;
       text-align: center;
       padding: 10px;
       border-radius: 6px;
       cursor: pointer;
-      font-size: 0.9rem;
+      font-size: 0.85rem;
     }
   </style>
 </head>
 <body>
 
-  <h1>Diseñador de Bucal de Boxeo</h1>
+  <h1>Diseñador de Bucal Realista</h1>
 
   <div class="canvas-container-wrapper">
-    <canvas id="mouthguardCanvas" width="320" height="320"></canvas>
+    <canvas id="mouthguardCanvas" width="340" height="320"></canvas>
   </div>
 
   <div class="controls">
+    <!-- Colores -->
     <div class="control-group">
-      <label>Color Exterior (Frontal)</label>
-      <div class="color-picker-row">
-        <input type="color" id="outerColor" value="#ff0000">
-        <span>Cambiar exterior</span>
+      <label>Colores del Bucal</label>
+      <div class="row">
+        <div class="row" style="flex:1;">
+          <input type="color" id="outerColor" value="#111111">
+          <span style="font-size:0.8rem;">Exterior</span>
+        </div>
+        <div class="row" style="flex:1;">
+          <input type="color" id="innerColor" value="#333333">
+          <span style="font-size:0.8rem;">Interior</span>
+        </div>
       </div>
     </div>
 
+    <!-- Agregar Imagen -->
     <div class="control-group">
-      <label>Color Interior (Goma)</label>
-      <div class="color-picker-row">
-        <input type="color" id="innerColor" value="#ffffff">
-        <span>Cambiar interior</span>
-      </div>
-    </div>
-
-    <div class="control-group">
-      <label>Imagen o Logo Personalizado</label>
-      <label for="imageLoader" class="file-label">📁 Cargar Imagen desde Celular</label>
+      <label>Logo / Imagen</label>
+      <label for="imageLoader" class="file-label">📁 Subir Imagen desde Galería</label>
       <input type="file" id="imageLoader" accept="image/*">
-      <button class="btn btn-secondary" onclick="deleteSelected()">🗑️ Eliminar Imagen Seleccionada</button>
+      
+      <div class="row" style="margin-top: 8px;">
+        <button class="btn btn-action" style="font-size:0.75rem; padding: 8px;" onclick="removeBackground()">✨ Quitar Fondo Blanco</button>
+        <button class="btn btn-action" style="font-size:0.75rem; padding: 8px;" onclick="cropCircle()">✂️ Recorte Círculo</button>
+      </div>
     </div>
 
-    <button class="btn" onclick="exportDesign()">💾 Descargar Diseño</button>
+    <!-- Agregar Texto -->
+    <div class="control-group">
+      <label>Agregar Texto / Nombre</label>
+      <div class="row">
+        <input type="text" id="textInput" placeholder="Ej: BOXING / 07">
+        <input type="color" id="textColor" value="#ffffff">
+        <button class="btn btn-action" style="width:auto; padding: 8px 12px;" onclick="addText()">+</button>
+      </div>
+    </div>
+
+    <!-- Acciones -->
+    <button class="btn btn-secondary" onclick="deleteSelected()">🗑️ Eliminar Elemento Seleccionado</button>
+    <button class="btn" onclick="exportDesign()">💾 Descargar Diseño PNG</button>
   </div>
 
   <script>
-    // Inicialización del canvas de Fabric.js
     const canvas = new fabric.Canvas('mouthguardCanvas');
-    
-    // Rutas SVG simplificadas que representan las dos capas del bucal
-    const outerPathData = "M 40 180 C 40 60, 280 60, 280 180 C 280 230, 240 250, 220 250 C 200 250, 190 210, 160 210 C 130 210, 120 250, 100 250 C 80 250, 40 230, 40 180 Z";
-    const innerPathData = "M 70 170 C 70 90, 250 90, 250 170 C 250 200, 220 220, 205 220 C 190 220, 180 190, 160 190 C 140 190, 130 220, 115 220 C 100 220, 70 200, 70 170 Z";
+
+    // Rutas anatómicas exactas basadas en la fotografía
+    const outerPathData = "M 315,79 L 301,68 L 283,95 L 259,92 L 233,60 L 204,120 L 179,141 L 155,128 L 118,60 L 89,93 L 70,97 L 51,70 L 39,72 L 35,86 L 51,144 L 94,230 L 148,256 L 190,260 L 230,250 L 269,218 L 302,136 Z";
+    const innerPathData = "M 283,95 L 259,92 L 233,60 L 204,120 L 179,141 L 155,128 L 118,60 L 89,93 L 70,97 L 85,125 L 125,100 L 155,150 L 179,160 L 204,140 L 245,100 Z";
 
     let outerLayer, innerLayer;
 
     function initMouthguard() {
-      // Capa exterior
+      // Capa Exterior (Frontal/Base)
       outerLayer = new fabric.Path(outerPathData, {
         fill: document.getElementById('outerColor').value,
+        stroke: '#000000',
+        strokeWidth: 2,
         selectable: false,
-        evented: false
+        evented: false,
+        rx: 10, ry: 10
       });
 
-      // Capa interior
+      // Capa Interior (Cavidad bucal/encía)
       innerLayer = new fabric.Path(innerPathData, {
         fill: document.getElementById('innerColor').value,
+        stroke: '#000000',
+        strokeWidth: 1,
         selectable: false,
         evented: false
       });
@@ -153,7 +186,7 @@
       canvas.renderAll();
     }
 
-    // Actualización de colores
+    // Cambio de colores
     document.getElementById('outerColor').addEventListener('input', (e) => {
       outerLayer.set('fill', e.target.value);
       canvas.renderAll();
@@ -164,7 +197,7 @@
       canvas.renderAll();
     });
 
-    // Importar imagen
+    // Cargar imagen
     document.getElementById('imageLoader').addEventListener('change', function(e) {
       const reader = new FileReader();
       reader.onload = function(event) {
@@ -172,14 +205,14 @@
         imgObj.src = event.target.result;
         imgObj.onload = function() {
           const image = new fabric.Image(imgObj);
-          image.scaleToWidth(80);
+          image.scaleToWidth(90);
           image.set({
-            left: 120,
-            top: 110,
+            left: 125,
+            top: 150,
             cornerStyle: 'circle',
-            cornerColor: '#ffffff',
-            borderColor: '#ff0000',
-            cornerSize: 12,
+            cornerColor: '#2563eb',
+            borderColor: '#2563eb',
+            cornerSize: 10,
             transparentCorners: false
           });
           canvas.add(image);
@@ -191,7 +224,71 @@
       }
     });
 
-    // Eliminar objeto seleccionado
+    // Función para Remover Fondo Blanco de la imagen activa
+    function removeBackground() {
+      const activeObj = canvas.getActiveObject();
+      if (activeObj && activeObj.type === 'image') {
+        const img = activeObj._element;
+        const tempCanvas = document.createElement('canvas');
+        const ctx = tempCanvas.getContext('2d');
+        tempCanvas.width = img.width;
+        tempCanvas.height = img.height;
+        ctx.drawImage(img, 0, 0);
+
+        const imgData = ctx.getImageData(0, 0, tempCanvas.width, tempCanvas.height);
+        const data = imgData.data;
+
+        // Recorrer píxeles y hacer transparentes los cercanos al blanco
+        for (let i = 0; i < data.length; i += 4) {
+          const r = data[i], g = data[i+1], b = data[i+2];
+          if (r > 210 && g > 210 && b > 210) {
+            data[i + 3] = 0; // Transparente
+          }
+        }
+        ctx.putImageData(imgData, 0, 0);
+
+        const newImg = new Image();
+        newImg.src = tempCanvas.toDataURL();
+        newImg.onload = function() {
+          activeObj.setElement(newImg);
+          canvas.renderAll();
+        };
+      }
+    }
+
+    // Recortar la imagen seleccionada en forma circular
+    function cropCircle() {
+      const activeObj = canvas.getActiveObject();
+      if (activeObj && activeObj.type === 'image') {
+        const clipPath = new fabric.Circle({
+          radius: activeObj.width / 2,
+          originX: 'center',
+          originY: 'center'
+        });
+        activeObj.set('clipPath', clipPath);
+        canvas.renderAll();
+      }
+    }
+
+    // Agregar Texto
+    function addText() {
+      const val = document.getElementById('textInput').value;
+      if (!val) return;
+      const text = new fabric.Text(val, {
+        left: 130,
+        top: 170,
+        fontSize: 20,
+        fontWeight: 'bold',
+        fill: document.getElementById('textColor').value,
+        fontFamily: 'Impact, sans-serif',
+        cornerColor: '#2563eb'
+      });
+      canvas.add(text);
+      canvas.setActiveObject(text);
+      document.getElementById('textInput').value = '';
+    }
+
+    // Eliminar Selección
     function deleteSelected() {
       const activeObject = canvas.getActiveObject();
       if (activeObject && activeObject !== outerLayer && activeObject !== innerLayer) {
@@ -199,13 +296,13 @@
       }
     }
 
-    // Exportar diseño como imagen PNG
+    // Descargar
     function exportDesign() {
       canvas.discardActiveObject();
       canvas.renderAll();
       const dataURL = canvas.toDataURL({ format: 'png', quality: 1.0 });
       const link = document.createElement('a');
-      link.download = 'mi-bucal-personalizado.png';
+      link.download = 'diseño-bucal.png';
       link.href = dataURL;
       link.click();
     }
