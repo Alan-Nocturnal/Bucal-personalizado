@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <title>Bucal 3D Canaleta Real</title>
+  <title>Protector Bucal 3D</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
   <style>
@@ -110,12 +110,12 @@
     <div class="group">
       <label>Colores del Modelo</label>
       <div class="row">
-        <span>Paredes Exteriores</span>
-        <input type="color" id="extColor" value="#00cc44">
+        <span>Exterior / Paredes</span>
+        <input type="color" id="extColor" value="#ff0000">
       </div>
       <div class="row" style="margin-top: 6px;">
-        <span>Interior Canaleta</span>
-        <input type="color" id="intColor" value="#a000fe">
+        <span>Interior / Canaleta</span>
+        <input type="color" id="intColor" value="#000000">
       </div>
     </div>
 
@@ -154,7 +154,7 @@
   <script>
     const container = document.getElementById('viewport');
     const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(40, container.clientWidth / container.clientHeight, 0.1, 1000);
+    const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
     
     const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
     renderer.setSize(container.clientWidth, container.clientHeight);
@@ -166,88 +166,122 @@
     controls.enableDamping = true;
     controls.dampingFactor = 0.05;
 
-    const light1 = new THREE.DirectionalLight(0xffffff, 1.3);
-    light1.position.set(6, 12, 8);
+    // Iluminación
+    const light1 = new THREE.DirectionalLight(0xffffff, 1.2);
+    light1.position.set(5, 8, 6);
     scene.add(light1);
-
-    const light2 = new THREE.DirectionalLight(0xffffff, 0.6);
-    light2.position.set(-6, -4, -6);
+    const light2 = new THREE.DirectionalLight(0xffffff, 0.5);
+    light2.position.set(-5, 6, -4);
     scene.add(light2);
+    scene.add(new THREE.AmbientLight(0xffffff, 0.6));
 
-    scene.add(new THREE.AmbientLight(0xffffff, 0.7));
-
+    // Materiales
     const extMat = new THREE.MeshStandardMaterial({
-      color: 0x00cc44,
-      roughness: 0.25,
+      color: 0xff0000,
+      roughness: 0.35,
       metalness: 0.05,
       side: THREE.FrontSide
     });
-
     const intMat = new THREE.MeshStandardMaterial({
-      color: 0xa000fe,
-      roughness: 0.3,
+      color: 0x000000,
+      roughness: 0.4,
       metalness: 0.0,
       side: THREE.FrontSide
     });
 
     const mouthguardGroup = new THREE.Group();
 
-    function buildChannelProfile(scale = 1, inset = 0) {
-      const shape = new THREE.Shape();
+    // =========================================================
+    // CONSTRUCCIÓN CORRECTA: Forma de herradura abierta
+    // =========================================================
 
-      // PERFIL TRANSVERSAL: la "U" mira HACIA ARRIBA
-      shape.moveTo(-0.5 * scale - inset,  0.0);
-      shape.lineTo(-0.5 * scale - inset,  0.9 * scale);
-      shape.lineTo(-0.35 * scale - inset, 0.9 * scale);
-      shape.lineTo(-0.35 * scale - inset, 0.35 * scale);
-      shape.lineTo( 0.35 * scale + inset, 0.35 * scale);
-      shape.lineTo( 0.35 * scale + inset, 0.9 * scale);
-      shape.lineTo( 0.5 * scale + inset,  0.9 * scale);
-      shape.lineTo( 0.5 * scale + inset,  0.0);
+    // Puntos de la arcada (vista desde arriba: forma de U abierta por detrás)
+    const arcPoints = [
+      new THREE.Vector2(-2.4, -1.0),
+      new THREE.Vector2(-2.1,  0.6),
+      new THREE.Vector2(-1.2,  1.5),
+      new THREE.Vector2( 0.0,  1.8),
+      new THREE.Vector2( 1.2,  1.5),
+      new THREE.Vector2( 2.1,  0.6),
+      new THREE.Vector2( 2.4, -1.0)
+    ];
 
-      shape.closePath();
+    function buildGuardShape(thickness = 0.28, wallHeight = 0.7) {
+      const group = new THREE.Group();
 
-      return shape;
-    }
-
-    function buildMouthguardGeometry(scale = 1, inset = 0) {
-      const shape = buildChannelProfile(scale, inset);
-
-      // ARCADA DENTAL EN FORMA DE U, ABIERTA POR DETRÁS
-      const curve = new THREE.CatmullRomCurve3([
-        new THREE.Vector3(-2.6, 0, -1.1),
-        new THREE.Vector3(-2.2, 0, 0.8),
-        new THREE.Vector3(-1.2, 0, 1.8),
-        new THREE.Vector3( 0.0, 0, 2.1),
-        new THREE.Vector3( 1.2, 0, 1.8),
-        new THREE.Vector3( 2.2, 0, 0.8),
-        new THREE.Vector3( 2.6, 0, -1.1)
-      ], false);
-
-      const extrudeSettings = {
-        steps: 160,
+      // --- PISO base del protector ---
+      const baseShape = new THREE.Shape();
+      baseShape.moveTo(arcPoints[0].x, arcPoints[0].y);
+      for (let i = 1; i < arcPoints.length; i++) {
+        baseShape.lineTo(arcPoints[i].x, arcPoints[i].y);
+      }
+      const baseGeo = new THREE.ExtrudeGeometry(baseShape, {
+        depth: 0.12,
         bevelEnabled: true,
-        bevelSegments: 3,
-        bevelSize: 0.025,
-        bevelThickness: 0.025,
-        extrudePath: curve
-      };
+        bevelSize: 0.04,
+        bevelThickness: 0.04,
+        bevelSegments: 3
+      });
+      baseGeo.rotateX(-Math.PI / 2);
+      const baseMesh = new THREE.Mesh(baseGeo, extMat);
+      group.add(baseMesh);
 
-      return new THREE.ExtrudeGeometry(shape, extrudeSettings);
+      // --- PARED EXTERIOR ---
+      const outerWallPoints = [];
+      for (const p of arcPoints) {
+        const dir = p.clone().normalize();
+        outerWallPoints.push(new THREE.Vector2(p.x + dir.x * thickness * 0.55, p.y + dir.y * thickness * 0.55));
+      }
+      const outerShape = new THREE.Shape();
+      outerShape.moveTo(outerWallPoints[0].x, outerWallPoints[0].y);
+      for (let i = 1; i < outerWallPoints.length; i++) {
+        outerShape.lineTo(outerWallPoints[i].x, outerWallPoints[i].y);
+      }
+      const outerWallGeo = new THREE.ExtrudeGeometry(outerShape, {
+        depth: wallHeight,
+        bevelEnabled: true,
+        bevelSize: 0.03,
+        bevelThickness: 0.03,
+        bevelSegments: 3
+      });
+      outerWallGeo.rotateX(-Math.PI / 2);
+      outerWallGeo.translate(0, 0.12, 0);
+      const outerMesh = new THREE.Mesh(outerWallGeo, extMat);
+      group.add(outerMesh);
+
+      // --- PARED INTERIOR (canaleta) ---
+      const innerWallPoints = [];
+      for (const p of arcPoints) {
+        const dir = p.clone().normalize();
+        innerWallPoints.push(new THREE.Vector2(p.x - dir.x * thickness * 0.45, p.y - dir.y * thickness * 0.45));
+      }
+      const innerShape = new THREE.Shape();
+      innerShape.moveTo(innerWallPoints[0].x, innerWallPoints[0].y);
+      for (let i = 1; i < innerWallPoints.length; i++) {
+        innerShape.lineTo(innerWallPoints[i].x, innerWallPoints[i].y);
+      }
+      const innerWallGeo = new THREE.ExtrudeGeometry(innerShape, {
+        depth: wallHeight * 0.75,
+        bevelEnabled: true,
+        bevelSize: 0.03,
+        bevelThickness: 0.03,
+        bevelSegments: 3
+      });
+      innerWallGeo.rotateX(-Math.PI / 2);
+      innerWallGeo.translate(0, 0.12, 0);
+      const innerMesh = new THREE.Mesh(innerWallGeo, intMat);
+      group.add(innerMesh);
+
+      return group;
     }
 
-    // Pared exterior de la canaleta
-    const outerMesh = new THREE.Mesh(buildMouthguardGeometry(1, 0), extMat);
-    mouthguardGroup.add(outerMesh);
-
-    // Interior de la canaleta: hueco hacia arriba para los dientes
-    const innerMesh = new THREE.Mesh(buildMouthguardGeometry(0.94, 0.03), intMat);
-    mouthguardGroup.add(innerMesh);
-
+    const guard = buildGuardShape();
+    mouthguardGroup.add(guard);
     scene.add(mouthguardGroup);
 
+    // --- LOGO ---
     let logoMesh = null;
-    const logoSettings = { scale: 1, x: 0, y: 0.6, z: 2.6 };
+    const logoSettings = { scale: 1, x: 0, y: 0.6, z: 2.2 };
 
     function updateLogoTransform() {
       if (!logoMesh) return;
@@ -264,7 +298,7 @@
         texture.needsUpdate = true;
         if (!logoMesh) {
           logoMesh = new THREE.Mesh(
-            new THREE.PlaneGeometry(1.6, 0.8),
+            new THREE.PlaneGeometry(1.4, 0.7),
             new THREE.MeshBasicMaterial({ map: texture, transparent: true, depthWrite: false })
           );
           mouthguardGroup.add(logoMesh);
@@ -291,25 +325,33 @@
       updateLogoTransform();
     });
 
-    document.getElementById('extColor').addEventListener('input', e => extMat.color.set(e.target.value));
-    document.getElementById('intColor').addEventListener('input', e => intMat.color.set(e.target.value));
+    // --- COLORES ---
+    document.getElementById('extColor').addEventListener('input', e => {
+      const c = new THREE.Color(e.target.value);
+      extMat.color.set(c);
+    });
+    document.getElementById('intColor').addEventListener('input', e => {
+      const c = new THREE.Color(e.target.value);
+      intMat.color.set(c);
+    });
 
+    // --- VISTAS ---
     function setView(type) {
       if (type === 'front') {
-        camera.position.set(0, 0.8, 6.2);
+        camera.position.set(0, 1.2, 5.5);
       } else if (type === 'top') {
-        camera.position.set(0, 5, 0.1);
+        camera.position.set(0, 5, 0.01);
       } else if (type === 'iso') {
-        camera.position.set(4.5, 4, 4.5);
+        camera.position.set(3.8, 3.2, 3.8);
       }
-      controls.target.set(0, 0.4, 0);
+      controls.target.set(0, 0.35, 0);
       controls.update();
     }
 
     function exportPNG() {
       renderer.render(scene, camera);
       const a = document.createElement('a');
-      a.download = 'bucal-canaleta-3d.png';
+      a.download = 'protector-bucal.png';
       a.href = renderer.domElement.toDataURL('image/png');
       a.click();
     }
@@ -317,17 +359,8 @@
     function copyCode() {
       const fullHTML = document.documentElement.outerHTML;
       navigator.clipboard.writeText(fullHTML).then(() => {
-        const msg = document.getElementById('copyMessage');
-        msg.classList.add('show');
-        setTimeout(() => msg.classList.remove('show'), 2500);
-      }).catch(() => {
-        const ta = document.getElementById('fullCode');
-        ta.value = fullHTML;
-        ta.select();
-        document.execCommand('copy');
-        const msg = document.getElementById('copyMessage');
-        msg.classList.add('show');
-        setTimeout(() => msg.classList.remove('show'), 2500);
+        document.getElementById('copyMessage').classList.add('show');
+        setTimeout(() => document.getElementById('copyMessage').classList.remove('show'), 2500);
       });
     }
 
