@@ -3,53 +3,51 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <title>Personalizador Realista Bucales</title>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
+  <title>Bucal 3D Anatómico Pro</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; }
-    body { background-color: #121212; color: #fff; display: flex; flex-direction: column; align-items: center; min-height: 100vh; padding: 12px; }
-    h1 { font-size: 1.1rem; margin-bottom: 12px; text-align: center; }
+    body { background: #0a0a0a; color: #fff; display: flex; flex-direction: column; align-items: center; min-height: 100vh; overflow-x: hidden; }
     
-    .canvas-wrapper {
-      position: relative;
-      width: 320px;
-      height: 320px;
-      background: radial-gradient(circle, #2a2a2a 0%, #0d0d0d 100%);
-      border-radius: 12px;
-      box-shadow: 0 8px 24px rgba(0,0,0,0.6);
-      overflow: hidden;
+    #viewport {
+      width: 100vw;
+      height: 55vh;
+      background: radial-gradient(circle at center, #222 0%, #050505 100%);
+      touch-action: none;
     }
     
-    .controls {
+    .ui-panel {
       width: 100%;
-      max-width: 340px;
-      margin-top: 14px;
+      max-width: 380px;
+      padding: 12px 16px;
       display: flex;
       flex-direction: column;
       gap: 10px;
     }
 
-    .control-group {
-      background: #1e1e1e;
-      padding: 10px 12px;
+    .group {
+      background: #181818;
+      padding: 10px 14px;
       border-radius: 8px;
-      border: 1px solid #333;
+      border: 1px solid #2a2a2a;
     }
 
-    .control-group label {
+    .group label {
       display: block;
       font-size: 0.8rem;
-      color: #aaa;
+      color: #888;
       margin-bottom: 6px;
-      font-weight: 600;
+      font-weight: 700;
+      text-transform: uppercase;
     }
 
-    .row { display: flex; gap: 8px; align-items: center; justify-content: space-between; }
+    .row { display: flex; gap: 10px; align-items: center; justify-content: space-between; font-size: 0.85rem; }
 
     input[type="color"] {
       border: none;
-      width: 36px;
-      height: 36px;
+      width: 34px;
+      height: 34px;
       border-radius: 50%;
       cursor: pointer;
       background: none;
@@ -62,141 +60,222 @@
       padding: 11px;
       border-radius: 6px;
       font-weight: bold;
-      width: 100%;
       cursor: pointer;
+      text-align: center;
+      width: 100%;
       font-size: 0.85rem;
     }
 
-    .btn-secondary { background: #333; }
-    .btn-blue { background: #2563eb; }
+    .btn-dark { background: #262626; color: #ccc; }
 
     input[type="file"] { display: none; }
-    .file-label {
+    .file-btn {
       display: block;
-      background: #2a2a2a;
-      border: 1px dashed #555;
-      color: white;
+      background: #222;
+      color: #eee;
       text-align: center;
-      padding: 8px;
+      padding: 9px;
       border-radius: 6px;
       cursor: pointer;
       font-size: 0.8rem;
+      border: 1px dashed #444;
     }
   </style>
 </head>
 <body>
 
-  <h1>Personalizador Anatómico Pro</h1>
+  <div id="viewport"></div>
 
-  <div class="canvas-wrapper">
-    <canvas id="c" width="320" height="320"></canvas>
-  </div>
-
-  <div class="controls">
-    <div class="control-group">
-      <label>Colores del Bucal</label>
+  <div class="ui-panel">
+    <div class="group">
+      <label>Materiales y Colores</label>
       <div class="row">
-        <span>Carcasa Exterior (Negro/Goma):</span>
-        <input type="color" id="outerColor" value="#1a1a1a">
+        <span>Carcasa Exterior (Protector)</span>
+        <input type="color" id="extColor" value="#111111">
       </div>
-      <div class="row" style="margin-top:6px;">
-        <span>Interior (Gel/Encía):</span>
-        <input type="color" id="innerColor" value="#e50914">
+      <div class="row" style="margin-top: 6px;">
+        <span>Interior (Cama Dental / Gel)</span>
+        <input type="color" id="intColor" value="#cc0000">
       </div>
     </div>
 
-    <div class="control-group">
-      <label>Imagen / Estampa Frontal</label>
-      <label for="imgUpload" class="file-label">📁 Subir Logo desde el Celular</label>
-      <input type="file" id="imgUpload" accept="image/*">
+    <div class="group">
+      <label>Logo / Gráfico Frontal</label>
+      <label for="imgInput" class="file-btn">📁 Subir Logo (PNG sin fondo)</label>
+      <input type="file" id="imgInput" accept="image/*">
     </div>
 
-    <button class="btn btn-secondary" onclick="deleteSelected()">🗑️ Eliminar Imagen Seleccionada</button>
-    <button class="btn" onclick="exportPNG()">💾 Guardar Diseño</button>
+    <div class="row">
+      <button class="btn btn-dark" onclick="setPresetView('front')">Vista Frontal</button>
+      <button class="btn btn-dark" onclick="setPresetView('top')">Vista Superior</button>
+      <button class="btn btn-dark" onclick="setPresetView('iso')">3/4 3D</button>
+    </div>
+
+    <button class="btn" onclick="exportRender()">📸 Descargar Imagen PNG</button>
   </div>
 
   <script>
-    const canvas = new fabric.Canvas('c');
+    // 1. Inicialización de Escena 3D
+    const container = document.getElementById('viewport');
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(40, container.clientWidth / container.clientHeight, 0.1, 1000);
+    
+    const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
+    renderer.setSize(container.clientWidth, container.clientHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.shadowMap.enabled = true;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    container.appendChild(renderer.domElement);
 
-    // Trazado Anatómico exacto basado en el modelo OPRO/Gel (Vista Superior Anatómica)
-    // 1. Capa Gel Interior
-    const innerPath = new fabric.Path('M 60,180 C 60,80 260,80 260,180 C 260,200 220,210 200,210 C 180,210 170,185 160,185 C 150,185 140,210 120,210 C 100,210 60,200 60,180 Z', {
-      fill: '#e50914',
-      stroke: '#a00000',
-      strokeWidth: 2,
-      selectable: false,
-      evented: false
+    const controls = new THREE.OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.05;
+
+    // Iluminación de Estudio Profesional (Luces clave, relleno y contorno)
+    const keyLight = new THREE.DirectionalLight(0xffffff, 1.2);
+    keyLight.position.set(5, 8, 5);
+    scene.add(keyLight);
+
+    const fillLight = new THREE.DirectionalLight(0xffffff, 0.5);
+    fillLight.position.set(-5, 2, 2);
+    scene.add(fillLight);
+
+    const backLight = new THREE.DirectionalLight(0xffffff, 0.8);
+    backLight.position.set(0, -5, -5);
+    scene.add(backLight);
+
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+    scene.add(ambientLight);
+
+    // 2. Construcción Anatómica del Bucal 3D
+    const mouthguardGroup = new THREE.Group();
+
+    // Materiales de alta calidad con reflejos de goma/silicona
+    const outerMat = new THREE.MeshStandardMaterial({
+      color: 0x111111,
+      roughness: 0.3,
+      metalness: 0.1
     });
 
-    // 2. Capa Exterior de Protección (Paredes)
-    const outerPath = new fabric.Path('M 45,180 C 45,65 275,65 275,180 C 275,220 225,230 195,230 C 175,230 168,205 160,205 C 152,205 145,230 125,230 C 95,230 45,220 45,180 Z M 70,180 C 70,95 250,95 250,180 C 250,195 220,200 200,200 C 180,200 170,175 160,175 C 150,175 140,200 120,200 C 100,200 70,195 70,180 Z', {
-      fill: '#1a1a1a',
-      fillRule: 'evenodd',
-      stroke: '#000000',
-      strokeWidth: 2,
-      selectable: false,
-      evented: false
+    const innerMat = new THREE.MeshStandardMaterial({
+      color: 0xcc0000,
+      roughness: 0.4,
+      metalness: 0.0
     });
 
-    // 3. Canal Respiratorio Central (Muesca frontal)
-    const ventPath = new fabric.Path('M 154,195 C 154,185 166,185 166,195 C 166,205 154,205 154,195 Z', {
-      fill: '#0d0d0d',
-      selectable: false,
-      evented: false
-    });
+    // Construcción de la Carcasa Exterior (Arco Anatómico Frontal con espacio para incisivos)
+    const outerShape = new THREE.Shape();
+    // Trazado en U con recortes para encía y paso respiratorio central
+    outerShape.moveTo(-3.2, -1.5);
+    outerShape.bezierCurveTo(-3.5, 1.5, -1.8, 3.2, 0, 3.2);
+    outerShape.bezierCurveTo(1.8, 3.2, 3.5, 1.5, 3.2, -1.5);
+    outerShape.bezierCurveTo(2.4, -1.2, 1.8, 1.8, 0, 1.8);
+    outerShape.bezierCurveTo(-1.8, 1.8, -2.4, -1.2, -3.2, -1.5);
 
-    canvas.add(innerPath);
-    canvas.add(outerPath);
-    canvas.add(ventPath);
+    const extrudeOuterSettings = { depth: 1.6, bevelEnabled: true, bevelSegments: 6, steps: 4, bevelSize: 0.2, bevelThickness: 0.2 };
+    const outerGeo = new THREE.ExtrudeGeometry(outerShape, extrudeOuterSettings);
+    outerGeo.center();
+    const outerMesh = new THREE.Mesh(outerGeo, outerMat);
+    outerMesh.rotation.x = Math.PI / 2;
+    mouthguardGroup.add(outerMesh);
 
-    // Controles de Color
-    document.getElementById('outerColor').addEventListener('input', (e) => {
-      outerPath.set('fill', e.target.value);
-      canvas.renderAll();
-    });
+    // Construcción de la Cama Interior de Dientes (Gel liso con canal interno)
+    const innerShape = new THREE.Shape();
+    innerShape.moveTo(-2.8, -1.2);
+    innerShape.bezierCurveTo(-3.0, 1.2, -1.5, 2.7, 0, 2.7);
+    innerShape.bezierCurveTo(1.5, 2.7, 3.0, 1.2, 2.8, -1.2);
+    innerShape.bezierCurveTo(2.1, -1.0, 1.4, 2.0, 0, 2.0);
+    innerShape.bezierCurveTo(-1.4, 2.0, -2.1, -1.0, -2.8, -1.2);
 
-    document.getElementById('innerColor').addEventListener('input', (e) => {
-      innerPath.set('fill', e.target.value);
-      canvas.renderAll();
-    });
+    const extrudeInnerSettings = { depth: 1.2, bevelEnabled: true, bevelSegments: 4, steps: 2, bevelSize: 0.1, bevelThickness: 0.1 };
+    const innerGeo = new THREE.ExtrudeGeometry(innerShape, extrudeInnerSettings);
+    innerGeo.center();
+    const innerMesh = new THREE.Mesh(innerGeo, innerMat);
+    innerMesh.rotation.x = Math.PI / 2;
+    innerMesh.position.y = 0.2; // Ligeramente elevado para crear el riel de gel
+    mouthguardGroup.add(innerMesh);
 
-    // Cargar Logo
-    document.getElementById('imgUpload').addEventListener('change', function(e) {
-      const file = e.target.files[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = function(f) {
-        fabric.Image.fromURL(f.target.result, function(img) {
-          img.scaleToWidth(60);
-          img.set({
-            left: 130,
-            top: 130,
-            cornerStyle: 'circle',
-            cornerColor: '#2563eb',
-            borderColor: '#2563eb'
-          });
-          canvas.add(img);
-          canvas.setActiveObject(img);
-        });
-      };
-      reader.readAsDataURL(file);
-    });
-
-    function deleteSelected() {
-      const activeObj = canvas.getActiveObject();
-      if (activeObj && activeObj !== innerPath && activeObj !== outerPath && activeObj !== ventPath) {
-        canvas.remove(activeObj);
+    // Reliefs anatómicos en las almohadillas molares inferiores
+    for(let side of [-1, 1]) {
+      for(let i = 0; i < 3; i++) {
+        const padGeo = new THREE.CylinderGeometry(0.25, 0.25, 0.2, 16);
+        const pad = new THREE.Mesh(padGeo, outerMat);
+        pad.position.set(side * (2.1 + (i * 0.2)), -0.8, -0.5 + (i * 0.7));
+        mouthguardGroup.add(pad);
       }
     }
 
-    function exportPNG() {
-      canvas.discardActiveObject();
-      canvas.renderAll();
+    scene.add(mouthguardGroup);
+
+    // 3. Sistema para Logos/Gráficos Frontales
+    let decalMesh;
+    document.getElementById('imgInput').addEventListener('change', function(e) {
+      const file = e.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = function(event) {
+          const texture = new THREE.TextureLoader().load(event.target.result);
+          if (!decalMesh) {
+            const decalGeo = new THREE.PlaneGeometry(1.5, 1.0);
+            const decalMat = new THREE.MeshBasicMaterial({ map: texture, transparent: true, depthTest: true });
+            decalMesh = new THREE.Mesh(decalGeo, decalMat);
+            decalMesh.position.set(0, -0.1, 2.02); // Justo sobre la superficie de la encía frontal
+            mouthguardGroup.add(decalMesh);
+          } else {
+            decalMesh.material.map = texture;
+            decalMesh.material.needsUpdate = true;
+          }
+        };
+        reader.readAsDataURL(file);
+      }
+    });
+
+    // Cambios de Color
+    document.getElementById('extColor').addEventListener('input', (e) => {
+      outerMat.color.set(e.target.value);
+    });
+
+    document.getElementById('intColor').addEventListener('input', (e) => {
+      innerMat.color.set(e.target.value);
+    });
+
+    // Preajustes de Cámara
+    function setPresetView(type) {
+      if (type === 'front') {
+        camera.position.set(0, -0.2, 7.5);
+      } else if (type === 'top') {
+        camera.position.set(0, 8, 0.1);
+      } else if (type === 'iso') {
+        camera.position.set(4, 4, 6);
+      }
+      controls.update();
+    }
+
+    function exportRender() {
+      renderer.render(scene, camera);
+      const dataURL = renderer.domElement.toDataURL('image/png');
       const link = document.createElement('a');
-      link.download = 'mi-bucal.png';
-      link.href = canvas.toDataURL({ format: 'png', quality: 1.0 });
+      link.download = 'bucal-3d.png';
+      link.href = dataURL;
       link.click();
     }
+
+    // Posición Inicial
+    setPresetView('iso');
+
+    // Bucle de Renderizado
+    function animate() {
+      requestAnimationFrame(animate);
+      controls.update();
+      renderer.render(scene, camera);
+    }
+    animate();
+
+    window.addEventListener('resize', () => {
+      camera.aspect = container.clientWidth / container.clientHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(container.clientWidth, container.clientHeight);
+    });
   </script>
 </body>
 </html>
