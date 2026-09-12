@@ -152,7 +152,6 @@
   <textarea id="fullCode" readonly></textarea>
 
   <script>
-    // 1. Escena e Iluminación
     const container = document.getElementById('viewport');
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(40, container.clientWidth / container.clientHeight, 0.1, 1000);
@@ -177,7 +176,6 @@
 
     scene.add(new THREE.AmbientLight(0xffffff, 0.7));
 
-    // 2. Materiales
     const extMat = new THREE.MeshStandardMaterial({
       color: 0x00cc44,
       roughness: 0.25,
@@ -194,44 +192,37 @@
 
     const mouthguardGroup = new THREE.Group();
 
-    // 3. CANALETA EN FORMA DE "U" REAL
-    function buildRealChannelMouthguard(scale = 1.0, inset = 0.0) {
-      // PERFIL TRANSVERSAL EN FORMA DE U
+    function buildChannelProfile(scale = 1, inset = 0) {
       const shape = new THREE.Shape();
-      const wallHeight = 1.1 * scale;
-      const baseWidth = 1.0 * scale;
-      const wallThickness = 0.18 * scale;
-      const floorThickness = 0.15 * scale;
 
-      // Desplazamiento interior para la canaleta
-      const shift = inset;
-
-      // Pared exterior (más alta)
-      shape.moveTo(-baseWidth/2 - shift, 0);
-      shape.lineTo(-baseWidth/2 - shift, wallHeight);
-      shape.lineTo(-baseWidth/2 + wallThickness - shift, wallHeight);
-      shape.lineTo(-baseWidth/2 + wallThickness - shift, floorThickness);
-
-      // Piso de la canaleta
-      shape.lineTo(baseWidth/2 - wallThickness + shift, floorThickness);
-
-      // Pared interior (más baja, hacia el paladar)
-      shape.lineTo(baseWidth/2 - wallThickness + shift, wallHeight * 0.65);
-      shape.lineTo(baseWidth/2 + shift, wallHeight * 0.65);
-      shape.lineTo(baseWidth/2 + shift, 0);
+      // PERFIL TRANSVERSAL: la "U" mira HACIA ARRIBA
+      shape.moveTo(-0.5 * scale - inset,  0.0);
+      shape.lineTo(-0.5 * scale - inset,  0.9 * scale);
+      shape.lineTo(-0.35 * scale - inset, 0.9 * scale);
+      shape.lineTo(-0.35 * scale - inset, 0.35 * scale);
+      shape.lineTo( 0.35 * scale + inset, 0.35 * scale);
+      shape.lineTo( 0.35 * scale + inset, 0.9 * scale);
+      shape.lineTo( 0.5 * scale + inset,  0.9 * scale);
+      shape.lineTo( 0.5 * scale + inset,  0.0);
 
       shape.closePath();
 
-      // ARCADA DENTAL: forma de U vista desde arriba
+      return shape;
+    }
+
+    function buildMouthguardGeometry(scale = 1, inset = 0) {
+      const shape = buildChannelProfile(scale, inset);
+
+      // ARCADA DENTAL EN FORMA DE U, ABIERTA POR DETRÁS
       const curve = new THREE.CatmullRomCurve3([
-        new THREE.Vector3(-2.6, 0, -1.0),
+        new THREE.Vector3(-2.6, 0, -1.1),
         new THREE.Vector3(-2.2, 0, 0.8),
         new THREE.Vector3(-1.2, 0, 1.8),
-        new THREE.Vector3(0.0, 0, 2.1),
-        new THREE.Vector3(1.2, 0, 1.8),
-        new THREE.Vector3(2.2, 0, 0.8),
-        new THREE.Vector3(2.6, 0, -1.0)
-      ], false); // curva ABIERTA = forma de U, no anillo
+        new THREE.Vector3( 0.0, 0, 2.1),
+        new THREE.Vector3( 1.2, 0, 1.8),
+        new THREE.Vector3( 2.2, 0, 0.8),
+        new THREE.Vector3( 2.6, 0, -1.1)
+      ], false);
 
       const extrudeSettings = {
         steps: 160,
@@ -239,29 +230,22 @@
         bevelSegments: 3,
         bevelSize: 0.025,
         bevelThickness: 0.025,
-        extrudePath: curve,
-        // EVITAR DEFORMACIÓN DEL PERFIL
-        extrudeRotate: 0 // ¡Clave! Evita que el perfil rote y se deforme
+        extrudePath: curve
       };
 
-      const geometry = new THREE.ExtrudeGeometry(shape, extrudeSettings);
-      geometry.center();
-      return geometry;
+      return new THREE.ExtrudeGeometry(shape, extrudeSettings);
     }
 
-    // Pared exterior
-    const outerGeo = buildRealChannelMouthguard(1.0, 0);
-    const outerMesh = new THREE.Mesh(outerGeo, extMat);
+    // Pared exterior de la canaleta
+    const outerMesh = new THREE.Mesh(buildMouthguardGeometry(1, 0), extMat);
     mouthguardGroup.add(outerMesh);
 
-    // Interior de la canaleta (hueco donde van los dientes)
-    const innerGeo = buildRealChannelMouthguard(0.94, 0.06);
-    const innerMesh = new THREE.Mesh(innerGeo, intMat);
+    // Interior de la canaleta: hueco hacia arriba para los dientes
+    const innerMesh = new THREE.Mesh(buildMouthguardGeometry(0.94, 0.03), intMat);
     mouthguardGroup.add(innerMesh);
 
     scene.add(mouthguardGroup);
 
-    // 4. Logo con controles de posición y tamaño
     let logoMesh = null;
     const logoSettings = { scale: 1, x: 0, y: 0.6, z: 2.6 };
 
@@ -294,7 +278,6 @@
       img.src = URL.createObjectURL(file);
     });
 
-    // Controles del logo
     document.getElementById('logoScale').addEventListener('input', e => {
       logoSettings.scale = parseFloat(e.target.value);
       updateLogoTransform();
@@ -308,15 +291,17 @@
       updateLogoTransform();
     });
 
-    // 5. Colores
     document.getElementById('extColor').addEventListener('input', e => extMat.color.set(e.target.value));
     document.getElementById('intColor').addEventListener('input', e => intMat.color.set(e.target.value));
 
-    // 6. Cámaras
     function setView(type) {
-      if (type === 'front') camera.position.set(0, 0.8, 6.2);
-      else if (type === 'top') camera.position.set(0, 5, 0.1);
-      else if (type === 'iso') camera.position.set(4.5, 4, 4.5);
+      if (type === 'front') {
+        camera.position.set(0, 0.8, 6.2);
+      } else if (type === 'top') {
+        camera.position.set(0, 5, 0.1);
+      } else if (type === 'iso') {
+        camera.position.set(4.5, 4, 4.5);
+      }
       controls.target.set(0, 0.4, 0);
       controls.update();
     }
@@ -329,7 +314,6 @@
       a.click();
     }
 
-    // 📋 Copiar código completo al portapapeles
     function copyCode() {
       const fullHTML = document.documentElement.outerHTML;
       navigator.clipboard.writeText(fullHTML).then(() => {
