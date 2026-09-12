@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <title>Personalizador Bucal 3D Pro</title>
+  <title>Protector Bucal 3D Real</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
   <style>
@@ -89,32 +89,32 @@
     <div class="group">
       <label>Colores del Bucal</label>
       <div class="row">
-        <span>Carcasa Exterior (Frente)</span>
-        <input type="color" id="extColor" value="#ffffff">
+        <span>Carcasa / Pared Exterior (Azul en tu dibujo)</span>
+        <input type="color" id="extColor" value="#0088ff">
       </div>
       <div class="row" style="margin-top: 6px;">
-        <span>Gel Interior (Canal Dientes)</span>
-        <input type="color" id="intColor" value="#111111">
+        <span>Canaleta Dientes (Rojo en tu dibujo)</span>
+        <input type="color" id="intColor" value="#e50914">
       </div>
     </div>
 
     <div class="group">
-      <label>Logo Frontal</label>
-      <label for="imgInput" class="file-btn">📁 Subir Imagen desde el Celular</label>
+      <label>Logo / Gráfico Frontal</label>
+      <label for="imgInput" class="file-btn">📁 Subir Imagen (PNG/JPG)</label>
       <input type="file" id="imgInput" accept="image/*">
     </div>
 
     <div class="row">
-      <button class="btn btn-dark" onclick="setView('front')">Vista Frontal</button>
-      <button class="btn btn-dark" onclick="setView('top')">Canal Superior</button>
+      <button class="btn btn-dark" onclick="setView('front')">Frente</button>
+      <button class="btn btn-dark" onclick="setView('top')">Ver Canaleta</button>
       <button class="btn btn-dark" onclick="setView('iso')">Perspectiva 3D</button>
     </div>
 
-    <button class="btn" onclick="exportPNG()">💾 Guardar Diseño PNG</button>
+    <button class="btn" onclick="exportPNG()">💾 Guardar Imagen PNG</button>
   </div>
 
   <script>
-    // 1. Configuración del escenario 3D
+    // 1. Escena
     const container = document.getElementById('viewport');
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
@@ -129,12 +129,12 @@
     controls.enableDamping = true;
     controls.dampingFactor = 0.05;
 
-    // Luces de estudio
+    // Iluminación
     const light1 = new THREE.DirectionalLight(0xffffff, 1.2);
-    light1.position.set(5, 12, 8);
+    light1.position.set(5, 10, 7);
     scene.add(light1);
 
-    const light2 = new THREE.DirectionalLight(0xffffff, 0.5);
+    const light2 = new THREE.DirectionalLight(0xffffff, 0.6);
     light2.position.set(-5, 4, -5);
     scene.add(light2);
 
@@ -142,114 +142,70 @@
 
     // 2. Materiales
     const extMat = new THREE.MeshStandardMaterial({
-      color: 0xffffff,
+      color: 0x0088ff,
       roughness: 0.25,
-      metalness: 0.05
+      metalness: 0.1
     });
 
     const intMat = new THREE.MeshStandardMaterial({
-      color: 0x111111,
-      roughness: 0.4,
+      color: 0xe50914,
+      roughness: 0.3,
       metalness: 0.0
     });
 
     const mouthguardGroup = new THREE.Group();
 
-    // 3. Generación geométrica anatómica (Cuenca en U abierta hacia arriba)
-    function buildAnatomicalMouthguard() {
-      // Puntos del arco dental superior
-      const pointsCount = 40;
-      const outerGeo = new THREE.BufferGeometry();
-      const innerGeo = new THREE.BufferGeometry();
+    // 3. Creación precisa de la canaleta en "U" para los dientes superiores
+    // Dibujamos el perfil del canal (Corte transversal)
+    const profileShape = new THREE.Shape();
+    // (x, y) donde y es la altura vertical del bucal
+    profileShape.moveTo(0.0, 0.0);       // Base exterior del bucal
+    profileShape.lineTo(0.2, 0.0);       // Borde inferior
+    profileShape.lineTo(0.25, 0.2);      // Suelo del canal dental (ROJO)
+    profileShape.lineTo(0.6, 0.2);       // Ancho donde se apoyan los dientes
+    profileShape.lineTo(0.65, 0.8);      // Pared trasera (paladar)
+    profileShape.lineTo(0.45, 0.8);      // Grosor pared trasera
+    profileShape.lineTo(0.4, 0.35);      // Bajada interior del canal
+    profileShape.lineTo(0.1, 0.35);      // Fondo del hueco
+    profileShape.lineTo(-0.1, 1.3);      // Pared exterior frontal alta (AZUL - protege incisivos)
+    profileShape.lineTo(-0.35, 1.2);     // Borde suave superior
+    profileShape.closePath();
 
-      // Creamos la canaleta en U orientada verticalmente
-      // Pared exterior alta (frente), suelo (base) y pared interior corta (paladar)
-      const outerVertices = [];
-      const innerVertices = [];
-      const indices = [];
+    // Curva del arco dentario humano (Forma de U visto desde arriba)
+    const arcPath = new THREE.CatmullRomCurve3([
+      new THREE.Vector3(-2.5, 0, -1.2),
+      new THREE.Vector3(-2.0, 0, 1.2),
+      new THREE.Vector3(0, 0, 2.2),
+      new THREE.Vector3(2.0, 0, 1.2),
+      new THREE.Vector3(2.5, 0, -1.2)
+    ]);
 
-      // Curva paramétrica en U
-      for (let i = 0; i <= pointsCount; i++) {
-        const t = (i / pointsCount) * Math.PI; // De 0 a PI (Arco)
-        const angle = t - Math.PI / 2;
+    const extrudeSettings = {
+      steps: 80,
+      bevelEnabled: true,
+      bevelSegments: 3,
+      bevelSize: 0.03,
+      bevelThickness: 0.03,
+      extrudePath: arcPath
+    };
 
-        // Radios
-        const rOut = 2.8 + Math.cos(angle * 2) * 0.2;
-        const rMid = 2.3 + Math.cos(angle * 2) * 0.2;
-        const rIn  = 1.8 + Math.cos(angle * 2) * 0.2;
-
-        // Coordenadas base
-        const xOut = Math.sin(angle) * rOut;
-        const zOut = Math.cos(angle) * rOut;
-
-        const xMid = Math.sin(angle) * rMid;
-        const zMid = Math.cos(angle) * rMid;
-
-        const xIn  = Math.sin(angle) * rIn;
-        const zIn  = Math.cos(angle) * rIn;
-
-        // Muesca central en V para el frenillo nasal/superior
-        const isCenter = Math.abs(angle) < 0.2;
-        const frontHeight = isCenter ? 1.0 : 1.4; // Bajada central para incisivos/frenillo
-
-        // Pared Exterior (Frente alto)
-        outerVertices.push(xOut, frontHeight, zOut); // Top exterior
-        outerVertices.push(xOut, -0.2, zOut);        // Base exterior
-
-        // Gel Interior (Canaleta vacía superior)
-        innerVertices.push(xMid, 0.1, zMid);         // Suelo del canal dental
-        innerVertices.push(xIn, 0.8, zIn);           // Pared palatina trasera
-      }
-
-      // Geometría sólida compuesta mediante Lathe / Extrusión curva sobre la ruta en U
-      const shape = new THREE.Shape();
-      // Perfil transversal de la U hacia arriba:
-      shape.moveTo(0, 1.4);         // Pared exterior alta
-      shape.lineTo(0.1, -0.2);      // Esquina base exterior
-      shape.lineTo(0.6, -0.2);      // Base ancha
-      shape.lineTo(0.7, 0.7);       // Pared interior
-      shape.lineTo(0.5, 0.7);       // Borde pared interior
-      shape.lineTo(0.4, 0.1);       // Canaleta ahuecada donde entran los dientes
-      shape.lineTo(0.2, 1.2);       // Bajada interior pared frontal
-      shape.closePath();
-
-      const curve = new THREE.CatmullRomCurve3([
-        new THREE.Vector3(-2.6, 0, -1.2),
-        new THREE.Vector3(-2.2, 0, 1.2),
-        new THREE.Vector3(0, 0, 2.4),
-        new THREE.Vector3(2.2, 0, 1.2),
-        new THREE.Vector3(2.6, 0, -1.2)
-      ]);
-
-      const extrudeSettings = {
-        steps: 80,
-        bevelEnabled: true,
-        bevelSegments: 4,
-        bevelSize: 0.05,
-        bevelThickness: 0.05,
-        extrudePath: curve
-      };
-
-      const geo = new THREE.ExtrudeGeometry(shape, extrudeSettings);
-      geo.center();
-      return geo;
-    }
-
-    const mainGeo = buildAnatomicalMouthguard();
-    
-    // Capa Externa (Carcasa)
-    const outerMesh = new THREE.Mesh(mainGeo, extMat);
+    // Generamos la carcasa exterior (AZUL)
+    const extGeo = new THREE.ExtrudeGeometry(profileShape, extrudeSettings);
+    extGeo.center();
+    const outerMesh = new THREE.Mesh(extGeo, extMat);
     mouthguardGroup.add(outerMesh);
 
-    // Capa Interna (Gel del canal)
-    const innerMesh = new THREE.Mesh(mainGeo, intMat);
-    innerMesh.scale.set(0.97, 0.97, 0.97);
-    innerMesh.position.y = 0.03;
+    // Generamos la canaleta interior ahuecada (ROJA)
+    const intGeo = new THREE.ExtrudeGeometry(profileShape, extrudeSettings);
+    intGeo.center();
+    const innerMesh = new THREE.Mesh(intGeo, intMat);
+    innerMesh.scale.set(0.98, 0.98, 0.98);
+    innerMesh.position.y = 0.02; // Ligeramente desfasado para mostrar el recubrimiento
     mouthguardGroup.add(innerMesh);
 
     scene.add(mouthguardGroup);
 
-    // 4. Logo Frontal
+    // 4. Carga e inserción de Logo en la cara exterior
     let logoMesh;
     document.getElementById('imgInput').addEventListener('change', function(e) {
       const file = e.target.files[0];
@@ -259,14 +215,14 @@
       reader.onload = function(event) {
         new THREE.TextureLoader().load(event.target.result, (texture) => {
           if (!logoMesh) {
-            const planeGeo = new THREE.PlaneGeometry(1.4, 0.8);
+            const planeGeo = new THREE.PlaneGeometry(1.4, 0.7);
             const planeMat = new THREE.MeshBasicMaterial({
               map: texture,
               transparent: true,
               depthTest: true
             });
             logoMesh = new THREE.Mesh(planeGeo, planeMat);
-            logoMesh.position.set(0, 0.15, 2.45); // Frente exacto de los incisivos
+            logoMesh.position.set(0, 0.1, 2.35); // Apoyado sobre la pared azul frontal
             mouthguardGroup.add(logoMesh);
           } else {
             logoMesh.material.map = texture;
@@ -287,14 +243,14 @@
       intMat.color.set(e.target.value);
     });
 
-    // 6. Controles de Cámara
+    // 6. Vista y Cámara
     function setView(type) {
       if (type === 'front') {
-        camera.position.set(0, 0.3, 6.5);
+        camera.position.set(0, 0.1, 6.0);
       } else if (type === 'top') {
-        camera.position.set(0, 6.5, 0.2); // Muestra la canaleta vacía donde entran los dientes
+        camera.position.set(0, 6.0, 0.1); // Muestra perfectamente la canaleta roja vacía para los dientes
       } else if (type === 'iso') {
-        camera.position.set(3.8, 3.2, 4.8);
+        camera.position.set(3.5, 2.8, 4.5); // Vista inclinada exacta a tu dibujo
       }
       controls.target.set(0, 0, 0);
       controls.update();
@@ -304,7 +260,7 @@
       renderer.render(scene, camera);
       const dataURL = renderer.domElement.toDataURL('image/png');
       const link = document.createElement('a');
-      link.download = 'bucal-3d.png';
+      link.download = 'mi-bucal-3d.png';
       link.href = dataURL;
       link.click();
     }
