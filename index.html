@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Personalizador de Bucales de Boxeo</title>
+  <!-- Fabric.js para manipulación interactiva de canvas -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; }
+    body { background-color: #121212; color: #fff; display: flex; flex-direction: column; align-items: center; min-height: 100vh; padding: 12px; }
+    h1 { font-size: 1.2rem; margin-bottom: 12px; text-align: center; }
+    
+    .canvas-container-wrapper {
+      position: relative;
+      width: 320px;
+      height: 320px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+      border-radius: 12px;
+      overflow: hidden;
+      background: #1e1e1e;
+    }
+    
+    .controls {
+      width: 100%;
+      max-width: 360px;
+      margin-top: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .control-group {
+      background: #2a2a2a;
+      padding: 12px;
+      border-radius: 8px;
+    }
+
+    .control-group label {
+      display: block;
+      font-size: 0.85rem;
+      margin-bottom: 8px;
+      color: #ccc;
+    }
+
+    .color-picker-row {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    input[type="color"] {
+      border: none;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      cursor: pointer;
+      background: none;
+    }
+
+    .btn {
+      background: #e50914;
+      color: white;
+      border: none;
+      padding: 12px;
+      border-radius: 6px;
+      font-weight: bold;
+      width: 100%;
+      cursor: pointer;
+      text-align: center;
+    }
+
+    .btn-secondary {
+      background: #333;
+      margin-top: 6px;
+    }
+
+    input[type="file"] { display: none; }
+    .file-label {
+      display: block;
+      background: #3a3a3a;
+      color: white;
+      text-align: center;
+      padding: 10px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.9rem;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Diseñador de Bucal de Boxeo</h1>
+
+  <div class="canvas-container-wrapper">
+    <canvas id="mouthguardCanvas" width="320" height="320"></canvas>
+  </div>
+
+  <div class="controls">
+    <div class="control-group">
+      <label>Color Exterior (Frontal)</label>
+      <div class="color-picker-row">
+        <input type="color" id="outerColor" value="#ff0000">
+        <span>Cambiar exterior</span>
+      </div>
+    </div>
+
+    <div class="control-group">
+      <label>Color Interior (Goma)</label>
+      <div class="color-picker-row">
+        <input type="color" id="innerColor" value="#ffffff">
+        <span>Cambiar interior</span>
+      </div>
+    </div>
+
+    <div class="control-group">
+      <label>Imagen o Logo Personalizado</label>
+      <label for="imageLoader" class="file-label">📁 Cargar Imagen desde Celular</label>
+      <input type="file" id="imageLoader" accept="image/*">
+      <button class="btn btn-secondary" onclick="deleteSelected()">🗑️ Eliminar Imagen Seleccionada</button>
+    </div>
+
+    <button class="btn" onclick="exportDesign()">💾 Descargar Diseño</button>
+  </div>
+
+  <script>
+    // Inicialización del canvas de Fabric.js
+    const canvas = new fabric.Canvas('mouthguardCanvas');
+    
+    // Rutas SVG simplificadas que representan las dos capas del bucal
+    const outerPathData = "M 40 180 C 40 60, 280 60, 280 180 C 280 230, 240 250, 220 250 C 200 250, 190 210, 160 210 C 130 210, 120 250, 100 250 C 80 250, 40 230, 40 180 Z";
+    const innerPathData = "M 70 170 C 70 90, 250 90, 250 170 C 250 200, 220 220, 205 220 C 190 220, 180 190, 160 190 C 140 190, 130 220, 115 220 C 100 220, 70 200, 70 170 Z";
+
+    let outerLayer, innerLayer;
+
+    function initMouthguard() {
+      // Capa exterior
+      outerLayer = new fabric.Path(outerPathData, {
+        fill: document.getElementById('outerColor').value,
+        selectable: false,
+        evented: false
+      });
+
+      // Capa interior
+      innerLayer = new fabric.Path(innerPathData, {
+        fill: document.getElementById('innerColor').value,
+        selectable: false,
+        evented: false
+      });
+
+      canvas.add(outerLayer);
+      canvas.add(innerLayer);
+      canvas.renderAll();
+    }
+
+    // Actualización de colores
+    document.getElementById('outerColor').addEventListener('input', (e) => {
+      outerLayer.set('fill', e.target.value);
+      canvas.renderAll();
+    });
+
+    document.getElementById('innerColor').addEventListener('input', (e) => {
+      innerLayer.set('fill', e.target.value);
+      canvas.renderAll();
+    });
+
+    // Importar imagen
+    document.getElementById('imageLoader').addEventListener('change', function(e) {
+      const reader = new FileReader();
+      reader.onload = function(event) {
+        const imgObj = new Image();
+        imgObj.src = event.target.result;
+        imgObj.onload = function() {
+          const image = new fabric.Image(imgObj);
+          image.scaleToWidth(80);
+          image.set({
+            left: 120,
+            top: 110,
+            cornerStyle: 'circle',
+            cornerColor: '#ffffff',
+            borderColor: '#ff0000',
+            cornerSize: 12,
+            transparentCorners: false
+          });
+          canvas.add(image);
+          canvas.setActiveObject(image);
+        };
+      };
+      if (e.target.files[0]) {
+        reader.readAsDataURL(e.target.files[0]);
+      }
+    });
+
+    // Eliminar objeto seleccionado
+    function deleteSelected() {
+      const activeObject = canvas.getActiveObject();
+      if (activeObject && activeObject !== outerLayer && activeObject !== innerLayer) {
+        canvas.remove(activeObject);
+      }
+    }
+
+    // Exportar diseño como imagen PNG
+    function exportDesign() {
+      canvas.discardActiveObject();
+      canvas.renderAll();
+      const dataURL = canvas.toDataURL({ format: 'png', quality: 1.0 });
+      const link = document.createElement('a');
+      link.download = 'mi-bucal-personalizado.png';
+      link.href = dataURL;
+      link.click();
+    }
+
+    initMouthguard();
+  </script>
+</body>
+</html>
