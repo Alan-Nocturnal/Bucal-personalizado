@@ -8,7 +8,7 @@
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; }
-    body { background: #080808; color: #fff; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
+    body { background: #080808; color: #fff; display: flex; flex-direction: column; align-items: center; min-height: 100vh; padding-bottom: 20px; }
     
     #viewport {
       width: 100vw;
@@ -41,7 +41,8 @@
       font-weight: bold;
     }
 
-    .row { display: flex; gap: 10px; align-items: center; justify-content: space-between; font-size: 0.85rem; }
+    .row { display: flex; gap: 8px; align-items: center; justify-content: space-between; font-size: 0.85rem; flex-wrap: wrap; }
+    .row-full { width: 100%; margin-top: 6px; }
 
     input[type="color"] {
       border: none;
@@ -50,6 +51,10 @@
       border-radius: 50%;
       cursor: pointer;
       background: none;
+    }
+
+    input[type="range"] {
+      width: 100%; accent-color: #e50914;
     }
 
     .btn {
@@ -63,9 +68,13 @@
       text-align: center;
       width: 100%;
       font-size: 0.85rem;
+      transition: background 0.2s;
     }
+    .btn:hover { filter: brightness(1.1); }
 
     .btn-dark { background: #222; color: #ccc; }
+    .btn-copy { background: #106b21; color: #fff; }
+    .btn-copy:active { background: #158829; }
 
     input[type="file"] { display: none; }
     .file-btn {
@@ -79,6 +88,18 @@
       font-size: 0.8rem;
       border: 1px dashed #444;
     }
+
+    .copy-msg {
+      font-size: 0.75rem;
+      color: #4ade80;
+      margin-top: 4px;
+      height: 18px;
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+    .copy-msg.show { opacity: 1; }
+
+    textarea { position: absolute; left: -9999px; }
   </style>
 </head>
 <body>
@@ -89,11 +110,11 @@
     <div class="group">
       <label>Colores del Modelo</label>
       <div class="row">
-        <span>Paredes Exteriores (Verde en tu dibujo)</span>
+        <span>Paredes Exteriores</span>
         <input type="color" id="extColor" value="#00cc44">
       </div>
       <div class="row" style="margin-top: 6px;">
-        <span>Interior Canaleta (Morado en tu dibujo)</span>
+        <span>Interior Canaleta</span>
         <input type="color" id="intColor" value="#a000fe">
       </div>
     </div>
@@ -102,16 +123,33 @@
       <label>Diseño / Logo Frontal</label>
       <label for="imgInput" class="file-btn">📁 Subir Imagen / Logo</label>
       <input type="file" id="imgInput" accept="image/*">
+
+      <div class="row row-full" style="margin-top: 10px;">
+        <span>Tamaño Logo</span>
+        <input type="range" id="logoScale" min="0.2" max="3" step="0.05" value="1">
+      </div>
+      <div class="row row-full">
+        <span>Posición Horizontal</span>
+        <input type="range" id="logoX" min="-2.5" max="2.5" step="0.05" value="0">
+      </div>
+      <div class="row row-full">
+        <span>Posición Vertical</span>
+        <input type="range" id="logoY" min="-1.5" max="2.5" step="0.05" value="0.6">
+      </div>
     </div>
 
     <div class="row">
       <button class="btn btn-dark" onclick="setView('front')">Frente</button>
-      <button class="btn btn-dark" onclick="setView('top')">Ver Canaleta Arriba</button>
+      <button class="btn btn-dark" onclick="setView('top')">Arriba</button>
       <button class="btn btn-dark" onclick="setView('iso')">Vista 3D</button>
     </div>
 
     <button class="btn" onclick="exportPNG()">💾 Guardar Render PNG</button>
+    <button class="btn btn-copy" onclick="copyCode()">📋 Copiar Código Completo</button>
+    <div id="copyMessage" class="copy-msg">✅ ¡Código copiado al portapapeles!</div>
   </div>
+
+  <textarea id="fullCode" readonly></textarea>
 
   <script>
     // 1. Escena e Iluminación
@@ -144,36 +182,32 @@
       color: 0x00cc44,
       roughness: 0.25,
       metalness: 0.05,
-      side: THREE.DoubleSide
+      side: THREE.FrontSide
     });
 
     const intMat = new THREE.MeshStandardMaterial({
       color: 0xa000fe,
       roughness: 0.3,
       metalness: 0.0,
-      side: THREE.DoubleSide
+      side: THREE.FrontSide
     });
 
     const mouthguardGroup = new THREE.Group();
 
-    // 3. Generación Anatómica Real: Perfil en U hueco extruido a lo largo del arco dental
-    function buildRealChannelMouthguard() {
-      // Perfil del canal (corte transversal de la U):
-      // Dibuja la pared externa alta, el piso donde apoyan los dientes y la pared interna corta
+    // 3. Generación de la canaleta
+    function buildRealChannelMouthguard(scale = 1.0, offsetY = 0.0) {
       const shape = new THREE.Shape();
       
-      // Coordenadas del canal (X = Grosor/Ancho, Y = Altura)
-      shape.moveTo(-0.6, 0.0);      // Base exterior inferior
-      shape.lineTo(-0.6, 1.4);      // Pared exterior frontal (ALTA para incisivos)
-      shape.lineTo(-0.35, 1.4);     // Grosor superior pared exterior
-      shape.lineTo(-0.3, 0.35);     // Bajada interior de la canaleta
-      shape.lineTo(0.3, 0.35);      // PISO HUECO DE LA CANALETA (Donde bajan los dientes)
-      shape.lineTo(0.35, 0.9);      // Pared interior trasera (paladar)
-      shape.lineTo(0.6, 0.9);       // Grosor superior pared interior
-      shape.lineTo(0.6, 0.0);       // Base interior inferior
+      shape.moveTo(-0.6 * scale, 0.0 + offsetY);
+      shape.lineTo(-0.6 * scale, 1.4 * scale + offsetY);
+      shape.lineTo(-0.35 * scale, 1.4 * scale + offsetY);
+      shape.lineTo(-0.3 * scale, 0.35 * scale + offsetY);
+      shape.lineTo(0.3 * scale, 0.35 * scale + offsetY);
+      shape.lineTo(0.35 * scale, 0.9 * scale + offsetY);
+      shape.lineTo(0.6 * scale, 0.9 * scale + offsetY);
+      shape.lineTo(0.6 * scale, 0.0 + offsetY);
       shape.closePath();
 
-      // Recorrido de la arcada dental (Forma de U visto desde arriba)
       const curve = new THREE.CatmullRomCurve3([
         new THREE.Vector3(-2.5, 0, -1.2),
         new THREE.Vector3(-2.1, 0, 1.1),
@@ -182,98 +216,116 @@
         new THREE.Vector3(1.1, 0, 2.1),
         new THREE.Vector3(2.1, 0, 1.1),
         new THREE.Vector3(2.5, 0, -1.2)
-      ]);
+      ], true);
 
       const extrudeSettings = {
-        steps: 120,
+        steps: 150,
         bevelEnabled: true,
-        bevelSegments: 4,
+        bevelSegments: 3,
         bevelSize: 0.03,
         bevelThickness: 0.03,
         extrudePath: curve
       };
 
-      const geo = new THREE.ExtrudeGeometry(shape, extrudeSettings);
-      geo.center();
-      return geo;
+      return new THREE.ExtrudeGeometry(shape, extrudeSettings);
     }
 
-    const baseGeo = buildRealChannelMouthguard();
-
-    // Carcasa / Paredes Exteriores
-    const outerMesh = new THREE.Mesh(baseGeo, extMat);
+    const outerMesh = new THREE.Mesh(buildRealChannelMouthguard(), extMat);
     mouthguardGroup.add(outerMesh);
 
-    // Canaleta / Interior
-    const innerMesh = new THREE.Mesh(baseGeo, intMat);
-    innerMesh.scale.set(0.97, 0.97, 0.97);
-    innerMesh.position.set(0, 0.02, 0);
+    const innerMesh = new THREE.Mesh(buildRealChannelMouthguard(0.94, 0.06), intMat);
     mouthguardGroup.add(innerMesh);
 
     scene.add(mouthguardGroup);
 
-    // 4. Logo / Imagen Frontal
-    let logoMesh;
-    document.getElementById('imgInput').addEventListener('change', function(e) {
+    // 4. Logo con controles de posición y tamaño
+    let logoMesh = null;
+    const logoSettings = { scale: 1, x: 0, y: 0.6, z: 2.6 };
+
+    function updateLogoTransform() {
+      if (!logoMesh) return;
+      logoMesh.scale.setScalar(logoSettings.scale);
+      logoMesh.position.set(logoSettings.x, logoSettings.y, logoSettings.z);
+    }
+
+    document.getElementById('imgInput').addEventListener('change', e => {
       const file = e.target.files[0];
       if (!file) return;
-
-      const reader = new FileReader();
-      reader.onload = function(event) {
-        new THREE.TextureLoader().load(event.target.result, (texture) => {
-          if (!logoMesh) {
-            const planeGeo = new THREE.PlaneGeometry(1.6, 0.8);
-            const planeMat = new THREE.MeshBasicMaterial({
-              map: texture,
-              transparent: true,
-              depthTest: true
-            });
-            logoMesh = new THREE.Mesh(planeGeo, planeMat);
-            logoMesh.position.set(0, 0.15, 2.5); // Apoyado directo en la pared frontal
-            mouthguardGroup.add(logoMesh);
-          } else {
-            logoMesh.material.map = texture;
-            logoMesh.material.needsUpdate = true;
-          }
-          renderer.render(scene, camera);
-        });
+      const img = new Image();
+      img.onload = () => {
+        const texture = new THREE.Texture(img);
+        texture.needsUpdate = true;
+        if (!logoMesh) {
+          logoMesh = new THREE.Mesh(
+            new THREE.PlaneGeometry(1.6, 0.8),
+            new THREE.MeshBasicMaterial({ map: texture, transparent: true, depthWrite: false })
+          );
+          mouthguardGroup.add(logoMesh);
+        } else {
+          logoMesh.material.map = texture;
+          logoMesh.material.needsUpdate = true;
+        }
+        updateLogoTransform();
+        renderer.render(scene, camera);
       };
-      reader.readAsDataURL(file);
+      img.src = URL.createObjectURL(file);
     });
 
-    // 5. Controles de Color
-    document.getElementById('extColor').addEventListener('input', (e) => {
-      extMat.color.set(e.target.value);
+    // Controles del logo
+    document.getElementById('logoScale').addEventListener('input', e => {
+      logoSettings.scale = parseFloat(e.target.value);
+      updateLogoTransform();
+    });
+    document.getElementById('logoX').addEventListener('input', e => {
+      logoSettings.x = parseFloat(e.target.value);
+      updateLogoTransform();
+    });
+    document.getElementById('logoY').addEventListener('input', e => {
+      logoSettings.y = parseFloat(e.target.value);
+      updateLogoTransform();
     });
 
-    document.getElementById('intColor').addEventListener('input', (e) => {
-      intMat.color.set(e.target.value);
-    });
+    // 5. Colores
+    document.getElementById('extColor').addEventListener('input', e => extMat.color.set(e.target.value));
+    document.getElementById('intColor').addEventListener('input', e => intMat.color.set(e.target.value));
 
-    // 6. Posicionamiento de Cámara
+    // 6. Cámaras
     function setView(type) {
-      if (type === 'front') {
-        camera.position.set(0, 0.1, 6.2);
-      } else if (type === 'top') {
-        camera.position.set(0, 6.2, 0.1); // Muestra perfectamente el hueco superior morado
-      } else if (type === 'iso') {
-        camera.position.set(3.2, 3.2, 4.8);
-      }
-      controls.target.set(0, 0, 0);
+      if (type === 'front') camera.position.set(0, 0.8, 6.2);
+      else if (type === 'top') camera.position.set(0, 7, 0.1);
+      else if (type === 'iso') camera.position.set(4.5, 4.5, 4.5);
+      controls.target.set(0, 0.6, 0);
       controls.update();
     }
 
     function exportPNG() {
       renderer.render(scene, camera);
-      const dataURL = renderer.domElement.toDataURL('image/png');
-      const link = document.createElement('a');
-      link.download = 'bucal-canaleta-3d.png';
-      link.href = dataURL;
-      link.click();
+      const a = document.createElement('a');
+      a.download = 'bucal-canaleta-3d.png';
+      a.href = renderer.domElement.toDataURL('image/png');
+      a.click();
+    }
+
+    // 📋 Copiar código completo al portapapeles
+    function copyCode() {
+      const fullHTML = document.documentElement.outerHTML;
+      navigator.clipboard.writeText(fullHTML).then(() => {
+        const msg = document.getElementById('copyMessage');
+        msg.classList.add('show');
+        setTimeout(() => msg.classList.remove('show'), 2500);
+      }).catch(() => {
+        // Alternativa si falla el permiso
+        const ta = document.getElementById('fullCode');
+        ta.value = fullHTML;
+        ta.select();
+        document.execCommand('copy');
+        const msg = document.getElementById('copyMessage');
+        msg.classList.add('show');
+        setTimeout(() => msg.classList.remove('show'), 2500);
+      });
     }
 
     setView('iso');
-
     function animate() {
       requestAnimationFrame(animate);
       controls.update();
