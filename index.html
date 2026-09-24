@@ -134,7 +134,7 @@
       </div>
       <div class="row row-full">
         <span>Posición Vertical</span>
-        <input type="range" id="logoY" min="-1" max="11.5" step="0.05" value="0.5">
+        <input type="range" id="logoY" min="-1" max="1.5" step="0.05" value="0.5">
       </div>
     </div>
 
@@ -179,44 +179,41 @@
     const guardGroup = new THREE.Group();
 
     // =========================================================
-    // CURVA DE ARCADA: forma de herradura abierta por detrás
+    // FORMA BASE: arco suave como el frente de la foto
     // =========================================================
-    const arcPoints = [
-      new THREE.Vector3(-2.1, 0, -0.85),
-      new THREE.Vector3(-1.8, 0,  0.65),
-      new THREE.Vector3(-0.9, 0,  1.35),
-      new THREE.Vector3( 0.0, 0,  1.60),
-      new THREE.Vector3( 0.9, 0,  1.35),
-      new THREE.Vector3( 1.8, 0,  0.65),
-      new THREE.Vector3( 2.1, 0, -0.85)
-    ];
+    const frontArcPoints = [];
+    for (let i = 0; i <= 60; i++) {
+      const t = i / 60;
+      const angle = (t - 0.5) * Math.PI * 0.85;
+      const radius = 2.35;
+      frontArcPoints.push(new THREE.Vector3(
+        Math.sin(angle) * radius,
+        0,
+        Math.cos(angle) * radius * 0.28 + 1.15
+      ));
+    }
 
-    const curve = new THREE.CatmullRomCurve3(arcPoints, false, 'catmullrom', 0.85);
+    const frontCurve = new THREE.CatmullRomCurve3(frontArcPoints, false, 'catmullrom', 0.8);
 
     // =========================================================
-    // PERFIL TRANSVERSAL EN FORMA DE "U"
+    // PERFIL TRANSVERSAL: forma de U gruesa
     // =========================================================
     function createUProfile(scale = 1) {
       const shape = new THREE.Shape();
 
-      const wallHeight = 0.65 * scale;
-      const baseWidth = 0.95 * scale;
-      const wallThickness = 0.22 * scale;
-      const floorThickness = 0.18 * scale;
+      const h = 0.72 * scale;
+      const w = 1.05 * scale;
+      const t = 0.24 * scale;
+      const floor = 0.22 * scale;
 
-      // Pared exterior
-      shape.moveTo(-baseWidth / 2, 0);
-      shape.lineTo(-baseWidth / 2, wallHeight);
-      shape.lineTo(-baseWidth / 2 + wallThickness, wallHeight);
-      shape.lineTo(-baseWidth / 2 + wallThickness, floorThickness);
-
-      // Piso de la canaleta
-      shape.lineTo(baseWidth / 2 - wallThickness, floorThickness);
-
-      // Pared interior
-      shape.lineTo(baseWidth / 2 - wallThickness, wallHeight * 0.72);
-      shape.lineTo(baseWidth / 2, wallHeight * 0.72);
-      shape.lineTo(baseWidth / 2, 0);
+      shape.moveTo(-w / 2, 0);
+      shape.lineTo(-w / 2, h);
+      shape.lineTo(-w / 2 + t, h);
+      shape.lineTo(-w / 2 + t, floor);
+      shape.lineTo(w / 2 - t, floor);
+      shape.lineTo(w / 2 - t, h * 0.78);
+      shape.lineTo(w / 2, h * 0.78);
+      shape.lineTo(w / 2, 0);
 
       shape.closePath();
 
@@ -224,7 +221,7 @@
     }
 
     // =========================================================
-    // BARRIDO ORIENTADO: la U siempre mira hacia arriba
+    // PROTECTOR BUCAL
     // =========================================================
     function buildMouthguard() {
       const uShape = createUProfile(1);
@@ -235,12 +232,11 @@
         bevelSize: 0.035,
         bevelThickness: 0.035,
         bevelSegments: 4,
-        extrudePath: curve
+        extrudePath: frontCurve
       };
 
       const geometry = new THREE.ExtrudeGeometry(uShape, extrudeSettings);
 
-      // Ajuste crítico para que la apertura de la U quede hacia arriba
       geometry.rotateX(-Math.PI / 2);
       geometry.rotateZ(Math.PI);
 
@@ -249,10 +245,10 @@
     }
 
     // =========================================================
-    // CANALETA INTERIOR
+    // CANALETA
     // =========================================================
     function buildInnerChannel() {
-      const uShape = createUProfile(0.86);
+      const uShape = createUProfile(0.88);
 
       const extrudeSettings = {
         steps: 160,
@@ -260,7 +256,7 @@
         bevelSize: 0.025,
         bevelThickness: 0.025,
         bevelSegments: 3,
-        extrudePath: curve
+        extrudePath: frontCurve
       };
 
       const geometry = new THREE.ExtrudeGeometry(uShape, extrudeSettings);
@@ -273,21 +269,62 @@
       return mesh;
     }
 
+    // =========================================================
+    // SUPERFICIE FRONTAL CURVA PARA LOGO
+    // =========================================================
+    function buildFrontLogoSurface() {
+      const width = 2.45;
+      const height = 0.85;
+      const radius = 2.35;
+
+      const geometry = new THREE.PlaneGeometry(width, height, 32, 16);
+
+      const positions = geometry.attributes.position;
+
+      for (let i = 0; i < positions.count; i++) {
+        const x = positions.getX(i);
+        const y = positions.getY(i);
+
+        const angle = x / radius;
+        const z = Math.cos(angle) * radius - radius;
+
+        positions.setZ(i, z + 1.18);
+      }
+
+      geometry.computeVertexNormals();
+
+      const material = new THREE.MeshBasicMaterial({
+        color: 0xffffff,
+        transparent: true,
+        opacity: 0,
+        side: THREE.DoubleSide
+      });
+
+      const mesh = new THREE.Mesh(geometry, material);
+      return mesh;
+    }
+
     guardGroup.add(buildMouthguard());
     guardGroup.add(buildInnerChannel());
+
+    const frontLogoSurface = buildFrontLogoSurface();
+    guardGroup.add(frontLogoSurface);
 
     scene.add(guardGroup);
 
     // =========================================================
-    // LOGO
+    // LOGO ADAPTADO A LA SUPERFICIE FRONTAL
     // =========================================================
     let logoMesh = null;
-    const logoPos = { s: 1, x: 0, y: 0.5, z: 2.0 };
+    const logoPos = { s: 1, x: 0, y: 0.5 };
 
     function updateLogo() {
       if (!logoMesh) return;
+
       logoMesh.scale.setScalar(logoPos.s);
-      logoMesh.position.set(logoPos.x, logoPos.y, logoPos.z);
+      logoMesh.position.set(logoPos.x, logoPos.y, 0);
+
+      frontLogoSurface.add(logoMesh);
     }
 
     document.getElementById('imgInput').addEventListener('change', e => {
@@ -297,16 +334,25 @@
       img.onload = () => {
         const tex = new THREE.Texture(img);
         tex.needsUpdate = true;
+
         if (!logoMesh) {
           logoMesh = new THREE.Mesh(
-            new THREE.PlaneGeometry(1.4, 0.7),
-            new THREE.MeshBasicMaterial({ map: tex, transparent: true, depthWrite: false })
+            new THREE.PlaneGeometry(2.1, 0.72),
+            new THREE.MeshBasicMaterial({
+              map: tex,
+              transparent: true,
+              depthWrite: false
+            })
           );
-          guardGroup.add(logoMesh);
+
+          logoMesh.position.z = 0.02;
+
+          frontLogoSurface.add(logoMesh);
         } else {
           logoMesh.material.map = tex;
           logoMesh.material.needsUpdate = true;
         }
+
         updateLogo();
         renderer.render(scene, camera);
       };
@@ -349,7 +395,7 @@
       renderer.render(scene, camera);
       const a = document.createElement('a');
       a.download = 'protector-bucal.png';
-      a.href = renderer.domElement.toDataURL('image/png');
+      href = renderer.domElement.toDataURL('image/png');
       a.click();
     }
 
@@ -361,7 +407,7 @@
       });
     }
 
-    setView('iso');
+    setView('front');
     function animate() {
       requestAnimationFrame(animate);
       controls.update();
@@ -376,4 +422,4 @@
     });
   </script>
 </body>
-          </html>
+  </html>
