@@ -4,7 +4,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>Configurador 3D — Protector Bucal</title>
-  <!-- Librerías desde CDN -->
+
+  <!-- CDNs con rutas correctas para r128 -->
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
@@ -36,7 +37,6 @@
       overflow: hidden;
     }
 
-    /* Visor 3D */
     #canvas-container {
       flex: 1;
       position: relative;
@@ -54,12 +54,9 @@
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
-      font-size: 1.2rem;
+      font-size: 1.1rem;
       color: var(--texto-sec);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 1rem;
+      text-align: center;
     }
 
     .spinner {
@@ -69,11 +66,11 @@
       border-top-color: var(--acento);
       border-radius: 50%;
       animation: girar 1s linear infinite;
+      margin: 0 auto 1rem;
     }
 
     @keyframes girar { to { transform: rotate(360deg); } }
 
-    /* Panel lateral */
     .panel {
       background: var(--panel);
       border-top: 1px solid var(--borde);
@@ -88,10 +85,6 @@
       color: #fff;
       border-bottom: 1px solid var(--borde);
       padding-bottom: 0.5rem;
-    }
-
-    .grupo {
-      margin-bottom: 1.2rem;
     }
 
     .fila {
@@ -146,6 +139,7 @@
       background: #2c1212;
       color: #ff6b6b;
       border: 1px solid #441a1a;
+      margin-top: 0.5rem;
     }
 
     .btn-peligro:hover { background: #441a1a; }
@@ -167,11 +161,11 @@
     .subir-label:hover { border-color: var(--acento); }
 
     .oculto { display: none !important; }
+    .mensaje { font-size: 0.8rem; margin-top: 0.5rem; color: #6a9fb5; }
   </style>
 </head>
 <body>
 
-  <!-- Visor 3D -->
   <div id="canvas-container">
     <div class="cargando" id="estado-carga">
       <div class="spinner"></div>
@@ -179,23 +173,18 @@
     </div>
   </div>
 
-  <!-- Panel de controles -->
   <div class="panel">
     <h2>🎨 Colores</h2>
-
-    <div class="grupo">
-      <div class="fila">
-        <label>Exterior</label>
-        <input type="color" id="color-exterior" value="#ff0000" />
-      </div>
-      <div class="fila">
-        <label>Interior / Canaleta</label>
-        <input type="color" id="color-interior" value="#000000" />
-      </div>
+    <div class="fila">
+      <label>Exterior</label>
+      <input type="color" id="color-exterior" value="#ff0000" />
+    </div>
+    <div class="fila">
+      <label>Interior / Canaleta</label>
+      <input type="color" id="color-interior" value="#000000" />
     </div>
 
     <h2>🖼️ Logo / Gráfico</h2>
-
     <label for="entrada-imagen" class="subir-label">📁 Subir imagen desde equipo</label>
     <input type="file" id="entrada-imagen" accept="image/*" />
 
@@ -223,32 +212,26 @@
           <option value="multiply">Multiplicar</option>
         </select>
       </div>
-
       <button class="btn btn-peligro" id="btn-quitar">🗑️ Quitar imagen</button>
     </div>
+    <p class="mensaje" id="info-nombres" style="color:#888; font-size:0.75rem;">
+      💡 En Blender nombra materiales: <b>Exterior</b> e <b>Interior</b>
+    </p>
   </div>
 
   <script>
     // ==========================================================
-    // CONFIGURACIÓN INICIAL Y ESCENA
+    // ESCENA Y RENDERER
     // ==========================================================
     const contenedor = document.getElementById('canvas-container');
     const estadoCarga = document.getElementById('estado-carga');
 
-    // Escena
     const escena = new THREE.Scene();
     escena.background = new THREE.Color(0x0a0a0a);
 
-    // Cámara
-    const camara = new THREE.PerspectiveCamera(
-      45,
-      contenedor.clientWidth / contenedor.clientHeight,
-      0.1,
-      100
-    );
+    const camara = new THREE.PerspectiveCamera(45, contenedor.clientWidth / contenedor.clientHeight, 0.1, 100);
     camara.position.set(0, 1.2, 4.5);
 
-    // Renderer
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
     renderer.setSize(contenedor.clientWidth, contenedor.clientHeight);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
@@ -263,58 +246,45 @@
     const controles = new THREE.OrbitControls(camara, renderer.domElement);
     controles.enableDamping = true;
     controles.dampingFactor = 0.05;
-    controles.enablePan = false; // Sin desplazamiento lateral
+    controles.enablePan = false;
 
-    // Limites de visión
-    controles.minAzimuthAngle = -Math.PI * 0.35;  // -63°
-    controles.maxAzimuthAngle = Math.PI * 0.35;   // +63°
-    controles.minPolarAngle = Math.PI * 0.25;      // No ver por debajo
-    controles.maxPolarAngle = Math.PI * 0.65;      // No pasar de arriba
-
+    controles.minAzimuthAngle = -Math.PI * 0.35; // -63°
+    controles.maxAzimuthAngle = Math.PI * 0.35;  // +63°
+    controles.minPolarAngle = Math.PI * 0.25;     // No ver por debajo
+    controles.maxPolarAngle = Math.PI * 0.65;     // No pasar de arriba
     controles.target.set(0, 0.2, 0);
 
     // ==========================================================
-    // ILUMINACIÓN REALISTA (simula silicona/plástico)
+    // ILUMINACIÓN
     // ==========================================================
-    const luzAmbiental = new THREE.AmbientLight(0xffffff, 0.55);
-    escena.add(luzAmbiental);
-
+    escena.add(new THREE.AmbientLight(0xffffff, 0.55));
     const luzPrincipal = new THREE.DirectionalLight(0xffffff, 1.3);
     luzPrincipal.position.set(3, 4, 5);
     escena.add(luzPrincipal);
-
     const luzRelleno = new THREE.DirectionalLight(0xfff4e5, 0.6);
     luzRelleno.position.set(-4, 3, 3);
     escena.add(luzRelleno);
-
-    const luzBrillo = new THREE.DirectionalLight(0xffffff, 0.4);
-    luzBrillo.position.set(0, 5, -3);
-    escena.add(luzBrillo);
+    escena.add(new THREE.DirectionalLight(0xffffff, 0.4).position.set(0, 5, -3));
 
     // ==========================================================
-    // VARIABLES GLOBALES
+    // VARIABLES
     // ==========================================================
     let modelo = null;
     let mallaExterior = null;
+    let mallaPrincipal = null; // Para el Decal
     let mallaInterior = null;
     let decal = null;
     let texturaLogo = null;
 
-    // Materiales base
-    const matExteriorBase = new THREE.MeshStandardMaterial({
-      color: 0xff0000,
-      roughness: 0.25,
-      metalness: 0.05
+    const matExterior = new THREE.MeshStandardMaterial({
+      color: 0xff0000, roughness: 0.25, metalness: 0.05
     });
-
-    const matInteriorBase = new THREE.MeshStandardMaterial({
-      color: 0x000000,
-      roughness: 0.4,
-      metalness: 0
+    const matInterior = new THREE.MeshStandardMaterial({
+      color: 0x000000, roughness: 0.4, metalness: 0
     });
 
     // ==========================================================
-    // CARGA DEL MODELO DESDE bucal.glb
+    // CARGA DE MODELO — NOMBRES FLEXIBLES
     // ==========================================================
     const cargadorGLTF = new THREE.GLTFLoader();
 
@@ -322,199 +292,157 @@
       'bucal.glb',
       (gltf) => {
         modelo = gltf.scene;
+        escena.add(modelo);
 
-        // Ajustar escala y posición según necesidad
-        modelo.scale.set(1, 1, 1);
-        modelo.position.set(0, 0, 0);
-
-        // Identificar mallas por nombre
+        // Buscar mallas con distintos nombres posibles
         modelo.traverse((hijo) => {
           if (!hijo.isMesh) return;
 
-          if (hijo.material.name === 'Exterior' || hijo.name === 'Exterior') {
+          const nombre = (hijo.name || '').trim();
+          const nombreMat = hijo.material ? (hijo.material.name || '').trim() : '';
+
+          // Coincidencia flexible
+          if (/exterior|afuera|cuerpo/i.test(nombre + ' ' + nombreMat)) {
             mallaExterior = hijo;
-            mallaExterior.material = matExteriorBase;
+            hijo.material = matExterior;
+          }
+          if (/interior|adentro|canaleta/i.test(nombre + ' ' + nombreMat)) {
+            mallaInterior = hijo;
+            hijo.material = matInterior;
           }
 
-          if (hijo.material.name === 'Interior' || hijo.name === 'Interior') {
-            mallaInterior = hijo;
-            mallaInterior.material = matInteriorBase;
+          // Guardar la primera malla visible como base para el Decal
+          if (!mallaPrincipal && hijo.visible) {
+            mallaPrincipal = hijo;
           }
         });
 
-        // Mensaje si no se encontraron los nombres
-        if (!mallaExterior && !mallaInterior) {
-          console.warn('⚠️ No se encontraron mallas con nombres "Exterior" / "Interior". Se aplican materiales a toda la malla.');
-          modelo.traverse((hijo) => {
-            if (!hijo.isMesh) return;
-            hijo.material = matExteriorBase;
-          });
+        // Si no se encontró por nombre, usamos la primera malla
+        if (!mallaExterior && mallaPrincipal) {
+          mallaExterior = mallaPrincipal;
+          mallaExterior.material = matExterior;
         }
 
-        escena.add(modelo);
+        console.log('✅ Modelo cargado');
+        console.log('🔵 Malla exterior:', mallaExterior?.name || '(detectada automáticamente)');
+        console.log('⚫ Malla interior:', mallaInterior?.name || '(no detectada, se usará exterior)');
+
         estadoCarga.remove();
       },
       (progreso) => {
-        const porcentaje = Math.round((progreso.loaded / progreso.total) * 100);
-        estadoCarga.querySelector('span').textContent = `Cargando modelo... ${porcentaje}%`;
+        const pct = progreso.total ? Math.round((progreso.loaded / progreso.total) * 100) : '...';
+        estadoCarga.querySelector('span').textContent = `Cargando modelo... ${pct}%`;
       },
-      (error) => {
-        estadoCarga.querySelector('span').textContent = '❌ Error al cargar "bucal.glb"';
-        console.error(error);
+      (err) => {
+        estadoCarga.querySelector('span').innerHTML = '❌ No se encontró <b>bucal.glb</b><br>Coloca el archivo en la misma carpeta que index.html';
+        console.error('Error cargando modelo:', err);
       }
     );
 
     // ==========================================================
     // CONTROLES DE COLOR
     // ==========================================================
-    document.getElementById('color-exterior').addEventListener('input', (e) => {
-      const color = new THREE.Color(e.target.value);
-      matExteriorBase.color.set(color);
+    document.getElementById('color-exterior').addEventListener('input', e => {
+      matExterior.color.set(e.target.value);
     });
-
-    document.getElementById('color-interior').addEventListener('input', (e) => {
-      const color = new THREE.Color(e.target.value);
-      matInteriorBase.color.set(color);
+    document.getElementById('color-interior').addEventListener('input', e => {
+      matInterior.color.set(e.target.value);
     });
 
     // ==========================================================
-    // GESTIÓN DE IMAGEN / LOGO — DecalGeometry
+    // LOGO / DECAL
     // ==========================================================
     const entradaImagen = document.getElementById('entrada-imagen');
     const controlesLogo = document.getElementById('controles-logo');
     const btnQuitar = document.getElementById('btn-quitar');
 
-    // Parámetros del logo
-    const configLogo = {
-      x: 0,
-      y: 0,
-      escala: 1,
-      opacidad: 1,
-      fusion: 'normal'
-    };
+    const config = { x: 0, y: 0, escala: 1, opacidad: 1, fusion: 'normal' };
 
-    entradaImagen.addEventListener('change', (e) => {
-      const archivo = e.target.files[0];
-      if (!archivo) return;
-
+    entradaImagen.addEventListener('change', e => {
+      const arch = e.target.files[0];
+      if (!arch) return;
       const lector = new FileReader();
-      lector.onload = (evento) => {
+      lector.onload = evt => {
         const img = new Image();
         img.onload = () => {
-          // Crear textura
           if (texturaLogo) texturaLogo.dispose();
           texturaLogo = new THREE.Texture(img);
           texturaLogo.needsUpdate = true;
-
           controlesLogo.classList.remove('oculto');
-          actualizarDecal();
+          dibujarDecal();
         };
-        img.src = evento.target.result;
+        img.src = evt.target.result;
       };
-      lector.readAsDataURL(archivo);
+      lector.readAsDataURL(arch);
     });
 
-    // Actualizar decal con controles
-    function actualizarDecal() {
-      if (!mallaExterior || !texturaLogo) return;
+    function dibujarDecal() {
+      if (!mallaPrincipal || !texturaLogo) return;
 
-      // Eliminar anterior
       if (decal) {
         escena.remove(decal);
-        decal.material.map?.dispose();
         decal.geometry?.dispose();
+        decal.material?.dispose();
       }
 
-      // Material del decal
       const matDecal = new THREE.MeshPhongMaterial({
         map: texturaLogo,
         transparent: true,
-        opacity: configLogo.opacidad,
+        opacity: config.opacidad,
         depthWrite: false,
         polygonOffset: true,
         polygonOffsetFactor: -4,
         polygonOffsetUnits: -4
       });
 
-      // Modo de fusión
-      if (configLogo.fusion === 'multiply') {
-        matDecal.blending = THREE.MultiplyBlending;
-      } else {
-        matDecal.blending = THREE.NormalBlending;
-      }
+      matDecal.blending = config.fusion === 'multiply'
+        ? THREE.MultiplyBlending
+        : THREE.NormalBlending;
 
-      // Tamaño del decal
-      const tam = 0.8 * configLogo.escala;
-      const tamX = tam * (texturaLogo.image.width / Math.max(texturaLogo.image.height, 1));
-      const tamY = tam;
+      const imgRel = texturaLogo.image.width / Math.max(texturaLogo.image.height, 1);
+      const ancho = 0.8 * config.escala * imgRel;
+      const alto = 0.8 * config.escala;
 
-      // Posición proyectada sobre la cara frontal
-      const posicion = new THREE.Vector3(configLogo.x, configLogo.y, 1.2);
-      const direccion = new THREE.Vector3(0, 0, 1);
-      const orientacion = new THREE.Euler(0, 0, 0);
+      const pos = new THREE.Vector3(config.x, config.y, 1.2);
+      const dir = new THREE.Vector3(0, 0, 1);
+      const ori = new THREE.Euler(0, 0, 0);
+      const tam = new THREE.Vector3(ancho, alto, 1);
 
-      // Crear geometría proyectada
-      const geoDecal = new THREE.DecalGeometry(
-        mallaExterior,
-        posicion,
-        direccion,
-        orientacion,
-        new THREE.Vector3(tamX, tamY, 1)
-      );
-
-      decal = new THREE.Mesh(geoDecal, matDecal);
+      // ✅ DecalGeometry con nombre correcto para r128
+      const geo = new THREE.DecalGeometry(mallaPrincipal, pos, dir, ori, tam);
+      decal = new THREE.Mesh(geo, matDecal);
       escena.add(decal);
     }
 
-    // Conectar controles
-    document.getElementById('logo-x').addEventListener('input', (e) => {
-      configLogo.x = +e.target.value;
-      actualizarDecal();
+    // Conectar sliders
+    ['logo-x','logo-y','logo-escala','logo-opacidad','modo-fusion'].forEach(id => {
+      document.getElementById(id).addEventListener('input', e => {
+        const val = e.target.value;
+        if (id === 'logo-x') config.x = +val;
+        if (id === 'logo-y') config.y = +val;
+        if (id === 'logo-escala') config.escala = +val;
+        if (id === 'logo-opacidad') config.opacidad = +val;
+        if (id === 'modo-fusion') config.fusion = val;
+        dibujarDecal();
+      });
     });
 
-    document.getElementById('logo-y').addEventListener('input', (e) => {
-      configLogo.y = +e.target.value;
-      actualizarDecal();
-    });
-
-    document.getElementById('logo-escala').addEventListener('input', (e) => {
-      configLogo.escala = +e.target.value;
-      actualizarDecal();
-    });
-
-    document.getElementById('logo-opacidad').addEventListener('input', (e) => {
-      configLogo.opacidad = +e.target.value;
-      actualizarDecal();
-    });
-
-    document.getElementById('modo-fusion').addEventListener('change', (e) => {
-      configLogo.fusion = e.target.value;
-      actualizarDecal();
-    });
-
-    // Quitar imagen
     btnQuitar.addEventListener('click', () => {
-      if (decal) {
-        escena.remove(decal);
-        decal = null;
-      }
-      if (texturaLogo) {
-        texturaLogo.dispose();
-        texturaLogo = null;
-      }
+      if (decal) { escena.remove(decal); decal = null; }
+      if (texturaLogo) { texturaLogo.dispose(); texturaLogo = null; }
       entradaImagen.value = '';
       controlesLogo.classList.add('oculto');
     });
 
     // ==========================================================
-    // ANIMACIÓN Y REDIMENSIONADO
+    // ANIMACIÓN
     // ==========================================================
-    function animar() {
-      requestAnimationFrame(animar);
+    function bucle() {
+      requestAnimationFrame(bucle);
       controles.update();
       renderer.render(escena, camara);
     }
-    animar();
+    bucle();
 
     window.addEventListener('resize', () => {
       camara.aspect = contenedor.clientWidth / contenedor.clientHeight;
