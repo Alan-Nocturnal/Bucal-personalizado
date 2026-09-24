@@ -13,7 +13,7 @@
     #viewport {
       width: 100vw;
       height: 55vh;
-      background: radial-gradient(circle at center, #222222 0%, #030303 100%);
+      background: radial-gradient(circle at center, #1a1a1a 0%, #000 100%);
       touch-action: none;
     }
     
@@ -28,9 +28,9 @@
 
     .group {
       background: #141414;
-      padding: 10px 12px;
+      padding: 12px;
       border-radius: 8px;
-      border: 1px solid #282828;
+      border: 1px solid #2a2a2a;
     }
 
     .group label {
@@ -38,19 +38,20 @@
       font-size: 0.8rem;
       color: #aaa;
       margin-bottom: 6px;
-      font-weight: bold;
+      font-weight: 600;
     }
 
-    .row { display: flex; gap: 8px; align-items: center; justify-content: space-between; font-size: 0.85rem; flex-wrap: wrap; }
-    .row-full { width: 100%; margin-top: 6px; }
+    .row { display: flex; gap: 8px; align-items: center; justify-content: space-between; flex-wrap: wrap; }
+    .row-full { width: 100%; margin-top: 8px; }
 
     input[type="color"] {
       border: none;
-      width: 36px;
-      height: 36px;
-      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      border-radius: 6px;
       cursor: pointer;
       background: none;
+      padding: 0;
     }
 
     input[type="range"] {
@@ -67,14 +68,13 @@
       cursor: pointer;
       text-align: center;
       width: 100%;
-      font-size: 0.85rem;
-      transition: background 0.2s;
+      font-size: 0.9rem;
+      transition: filter 0.2s;
     }
     .btn:hover { filter: brightness(1.1); }
 
-    .btn-dark { background: #222; color: #ccc; }
-    .btn-copy { background: #106b21; color: #fff; }
-    .btn-copy:active { background: #158829; }
+    .btn-dark { background: #252525; color: #ddd; }
+    .btn-copy { background: #16a34a; color: #fff; margin-top: 6px; }
 
     input[type="file"] { display: none; }
     .file-btn {
@@ -85,15 +85,15 @@
       padding: 10px;
       border-radius: 6px;
       cursor: pointer;
-      font-size: 0.8rem;
+      font-size: 0.85rem;
       border: 1px dashed #444;
     }
 
     .copy-msg {
       font-size: 0.75rem;
-      color: #4ade80;
-      margin-top: 4px;
-      height: 18px;
+      color: #86efac;
+      margin-top: 6px;
+      height: 20px;
       opacity: 0;
       transition: opacity 0.3s;
     }
@@ -108,48 +108,48 @@
 
   <div class="panel">
     <div class="group">
-      <label>Colores del Modelo</label>
+      <label>🎨 Colores</label>
       <div class="row">
-        <span>Exterior / Paredes</span>
-        <input type="color" id="extColor" value="#ff0000">
+        <span>Exterior</span>
+        <input type="color" id="extColor" value="#00ff00">
       </div>
-      <div class="row" style="margin-top: 6px;">
+      <div class="row" style="margin-top: 8px;">
         <span>Interior / Canaleta</span>
         <input type="color" id="intColor" value="#000000">
       </div>
     </div>
 
     <div class="group">
-      <label>Diseño / Logo Frontal</label>
+      <label>🖼️ Logo Frontal</label>
       <label for="imgInput" class="file-btn">📁 Subir Imagen / Logo</label>
       <input type="file" id="imgInput" accept="image/*">
 
-      <div class="row row-full" style="margin-top: 10px;">
-        <span>Tamaño Logo</span>
-        <input type="range" id="logoScale" min="0.2" max="3" step="0.05" value="1">
+      <div class="row row-full">
+        <span>Tamaño</span>
+        <input type="range" id="logoScale" min="0.3" max="2.5" step="0.05" value="1">
       </div>
       <div class="row row-full">
         <span>Posición Horizontal</span>
-        <input type="range" id="logoX" min="-2.5" max="2.5" step="0.05" value="0">
+        <input type="range" id="logoX" min="-2" max="2" step="0.05" value="0">
       </div>
       <div class="row row-full">
         <span>Posición Vertical</span>
-        <input type="range" id="logoY" min="-1.5" max="2.5" step="0.05" value="0.6">
+        <input type="range" id="logoY" min="-1" max="1.5" step="0.05" value="0.5">
       </div>
     </div>
 
-    <div class="row">
-      <button class="btn btn-dark" onclick="setView('front')">Frente</button>
-      <button class="btn btn-dark" onclick="setView('top')">Arriba</button>
-      <button class="btn btn-dark" onclick="setView('iso')">Vista 3D</button>
+    <div class="row" style="margin-top: 6px;">
+      <button class="btn btn-dark" onclick="setView('front')">👁️ Frente</button>
+      <button class="btn btn-dark" onclick="setView('top')">👁️ Arriba</button>
+      <button class="btn btn-dark" onclick="setView('iso')">👁️ Vista 3D</button>
     </div>
 
-    <button class="btn" onclick="exportPNG()">💾 Guardar Render PNG</button>
+    <button class="btn" onclick="exportPNG()" style="margin-top: 10px;">💾 Guardar PNG</button>
     <button class="btn btn-copy" onclick="copyCode()">📋 Copiar Código Completo</button>
-    <div id="copyMessage" class="copy-msg">✅ ¡Código copiado al portapapeles!</div>
+    <div id="copyMessage" class="copy-msg">✅ ¡Código copiado!</div>
   </div>
 
-  <textarea id="fullCode" readonly></textarea>
+  <textarea id="fullCode"></textarea>
 
   <script>
     const container = document.getElementById('viewport');
@@ -159,7 +159,6 @@
     const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
     renderer.setSize(container.clientWidth, container.clientHeight);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    renderer.toneMapping = THREE.ACESFilmicToneMapping;
     container.appendChild(renderer.domElement);
 
     const controls = new THREE.OrbitControls(camera, renderer.domElement);
@@ -167,126 +166,100 @@
     controls.dampingFactor = 0.05;
 
     // Iluminación
-    const light1 = new THREE.DirectionalLight(0xffffff, 1.2);
-    light1.position.set(5, 8, 6);
-    scene.add(light1);
-    const light2 = new THREE.DirectionalLight(0xffffff, 0.5);
-    light2.position.set(-5, 6, -4);
-    scene.add(light2);
+    scene.add(new THREE.DirectionalLight(0xffffff, 1.2).position.set(5, 8, 6));
+    scene.add(new THREE.DirectionalLight(0xffffff, 0.5).position.set(-4, 5, -4));
     scene.add(new THREE.AmbientLight(0xffffff, 0.6));
 
     // Materiales
     const extMat = new THREE.MeshStandardMaterial({
-      color: 0xff0000,
-      roughness: 0.35,
-      metalness: 0.05,
-      side: THREE.FrontSide
+      color: 0x00ff00, roughness: 0.35, metalness: 0.05
     });
     const intMat = new THREE.MeshStandardMaterial({
-      color: 0x000000,
-      roughness: 0.4,
-      metalness: 0.0,
-      side: THREE.FrontSide
+      color: 0x000000, roughness: 0.4, metalness: 0
     });
 
-    const mouthguardGroup = new THREE.Group();
+    const guardGroup = new THREE.Group();
 
     // =========================================================
-    // CONSTRUCCIÓN CORRECTA: Forma de herradura abierta
+    // PERFIL EN FORMA DE U — MIRA HACIA ARRIBA
     // =========================================================
+    function makeUShape(scale = 1, inset = 0) {
+      const s = new THREE.Shape();
+      const w = 0.5 * scale;       // ancho total
+      const h = 0.7 * scale;       // altura de paredes
+      const t = 0.15 * scale;      // grosor de pared
 
-    // Puntos de la arcada (vista desde arriba: forma de U abierta por detrás)
-    const arcPoints = [
-      new THREE.Vector2(-2.4, -1.0),
-      new THREE.Vector2(-2.1,  0.6),
-      new THREE.Vector2(-1.2,  1.5),
-      new THREE.Vector2( 0.0,  1.8),
-      new THREE.Vector2( 1.2,  1.5),
-      new THREE.Vector2( 2.1,  0.6),
-      new THREE.Vector2( 2.4, -1.0)
-    ];
+      const off = inset;
 
-    function buildGuardShape(thickness = 0.28, wallHeight = 0.7) {
-      const group = new THREE.Group();
-
-      // --- PISO base del protector ---
-      const baseShape = new THREE.Shape();
-      baseShape.moveTo(arcPoints[0].x, arcPoints[0].y);
-      for (let i = 1; i < arcPoints.length; i++) {
-        baseShape.lineTo(arcPoints[i].x, arcPoints[i].y);
-      }
-      const baseGeo = new THREE.ExtrudeGeometry(baseShape, {
-        depth: 0.12,
-        bevelEnabled: true,
-        bevelSize: 0.04,
-        bevelThickness: 0.04,
-        bevelSegments: 3
-      });
-      baseGeo.rotateX(-Math.PI / 2);
-      const baseMesh = new THREE.Mesh(baseGeo, extMat);
-      group.add(baseMesh);
-
-      // --- PARED EXTERIOR ---
-      const outerWallPoints = [];
-      for (const p of arcPoints) {
-        const dir = p.clone().normalize();
-        outerWallPoints.push(new THREE.Vector2(p.x + dir.x * thickness * 0.55, p.y + dir.y * thickness * 0.55));
-      }
-      const outerShape = new THREE.Shape();
-      outerShape.moveTo(outerWallPoints[0].x, outerWallPoints[0].y);
-      for (let i = 1; i < outerWallPoints.length; i++) {
-        outerShape.lineTo(outerWallPoints[i].x, outerWallPoints[i].y);
-      }
-      const outerWallGeo = new THREE.ExtrudeGeometry(outerShape, {
-        depth: wallHeight,
-        bevelEnabled: true,
-        bevelSize: 0.03,
-        bevelThickness: 0.03,
-        bevelSegments: 3
-      });
-      outerWallGeo.rotateX(-Math.PI / 2);
-      outerWallGeo.translate(0, 0.12, 0);
-      const outerMesh = new THREE.Mesh(outerWallGeo, extMat);
-      group.add(outerMesh);
-
-      // --- PARED INTERIOR (canaleta) ---
-      const innerWallPoints = [];
-      for (const p of arcPoints) {
-        const dir = p.clone().normalize();
-        innerWallPoints.push(new THREE.Vector2(p.x - dir.x * thickness * 0.45, p.y - dir.y * thickness * 0.45));
-      }
-      const innerShape = new THREE.Shape();
-      innerShape.moveTo(innerWallPoints[0].x, innerWallPoints[0].y);
-      for (let i = 1; i < innerWallPoints.length; i++) {
-        innerShape.lineTo(innerWallPoints[i].x, innerWallPoints[i].y);
-      }
-      const innerWallGeo = new THREE.ExtrudeGeometry(innerShape, {
-        depth: wallHeight * 0.75,
-        bevelEnabled: true,
-        bevelSize: 0.03,
-        bevelThickness: 0.03,
-        bevelSegments: 3
-      });
-      innerWallGeo.rotateX(-Math.PI / 2);
-      innerWallGeo.translate(0, 0.12, 0);
-      const innerMesh = new THREE.Mesh(innerWallGeo, intMat);
-      group.add(innerMesh);
-
-      return group;
+      // Pared izquierda
+      s.moveTo(-w - off, 0);
+      s.lineTo(-w - off, h);
+      s.lineTo(-w + t - off, h);
+      s.lineTo(-w + t - off, t);
+      
+      // Piso
+      s.lineTo(w - t + off, t);
+      
+      // Pared derecha
+      s.lineTo(w - t + off, h);
+      s.lineTo(w + off, h);
+      s.lineTo(w + off, 0);
+      
+      s.closePath();
+      return s;
     }
 
-    const guard = buildGuardShape();
-    mouthguardGroup.add(guard);
-    scene.add(mouthguardGroup);
+    // Curva de la arcada (vista desde arriba: forma de herradura)
+    const arcPoints = [
+      new THREE.Vector3(-2.2, 0, -0.9),
+      new THREE.Vector3(-1.9, 0, 0.7),
+      new THREE.Vector3(-1.0, 0, 1.4),
+      new THREE.Vector3( 0.0, 0, 1.6),
+      new THREE.Vector3( 1.0, 0, 1.4),
+      new THREE.Vector3( 1.9, 0, 0.7),
+      new THREE.Vector3( 2.2, 0, -0.9)
+    ];
+    const curve = new THREE.CatmullRomCurve3(arcPoints, false, 'catmullrom', 0.8);
 
-    // --- LOGO ---
+    // EXTRUSIÓN CON ROTACIÓN CONTROLADA = la U siempre mira hacia arriba
+    function extrudeGuard(shape, colorMat, rotOffset = 0) {
+      const geo = new THREE.ExtrudeGeometry(shape, {
+        steps: 120,
+        bevelEnabled: true,
+        bevelSize: 0.03,
+        bevelThickness: 0.03,
+        bevelSegments: 3,
+        extrudePath: curve,
+        extrudeRotate: 0 // ¡CLAVE! Evita que la U gire y se deforme
+      });
+      
+      // Ajustar orientación para que la U mire hacia arriba
+      geo.rotateX(-Math.PI / 2);
+      if (rotOffset) geo.rotateZ(rotOffset);
+      
+      return new THREE.Mesh(geo, colorMat);
+    }
+
+    // Capa exterior
+    const outerMesh = extrudeGuard(makeUShape(1.0, 0), extMat);
+    guardGroup.add(outerMesh);
+
+    // Capa interior (canaleta donde van los dientes — un poco más chica)
+    const innerMesh = extrudeGuard(makeUShape(0.88, 0.02), intMat);
+    guardGroup.add(innerMesh);
+
+    scene.add(guardGroup);
+
+    // =========================================================
+    // LOGO
+    // =========================================================
     let logoMesh = null;
-    const logoSettings = { scale: 1, x: 0, y: 0.6, z: 2.2 };
+    const logoPos = { s: 1, x: 0, y: 0.5, z: 2.0 };
 
-    function updateLogoTransform() {
+    function updateLogo() {
       if (!logoMesh) return;
-      logoMesh.scale.setScalar(logoSettings.scale);
-      logoMesh.position.set(logoSettings.x, logoSettings.y, logoSettings.z);
+      logoMesh.scale.setScalar(logoPos.s);
+      logoMesh.position.set(logoPos.x, logoPos.y, logoPos.z);
     }
 
     document.getElementById('imgInput').addEventListener('change', e => {
@@ -294,57 +267,53 @@
       if (!file) return;
       const img = new Image();
       img.onload = () => {
-        const texture = new THREE.Texture(img);
-        texture.needsUpdate = true;
+        const tex = new THREE.Texture(img);
+        tex.needsUpdate = true;
         if (!logoMesh) {
           logoMesh = new THREE.Mesh(
             new THREE.PlaneGeometry(1.4, 0.7),
-            new THREE.MeshBasicMaterial({ map: texture, transparent: true, depthWrite: false })
+            new THREE.MeshBasicMaterial({ map: tex, transparent: true, depthWrite: false })
           );
-          mouthguardGroup.add(logoMesh);
+          guardGroup.add(logoMesh);
         } else {
-          logoMesh.material.map = texture;
+          logoMesh.material.map = tex;
           logoMesh.material.needsUpdate = true;
         }
-        updateLogoTransform();
+        updateLogo();
         renderer.render(scene, camera);
       };
       img.src = URL.createObjectURL(file);
     });
 
     document.getElementById('logoScale').addEventListener('input', e => {
-      logoSettings.scale = parseFloat(e.target.value);
-      updateLogoTransform();
+      logoPos.s = +e.target.value; updateLogo();
     });
     document.getElementById('logoX').addEventListener('input', e => {
-      logoSettings.x = parseFloat(e.target.value);
-      updateLogoTransform();
+      logoPos.x = +e.target.value; updateLogo();
     });
     document.getElementById('logoY').addEventListener('input', e => {
-      logoSettings.y = parseFloat(e.target.value);
-      updateLogoTransform();
+      logoPos.y = +e.target.value; updateLogo();
     });
 
-    // --- COLORES ---
+    // =========================================================
+    // CONTROLES
+    // =========================================================
     document.getElementById('extColor').addEventListener('input', e => {
-      const c = new THREE.Color(e.target.value);
-      extMat.color.set(c);
+      extMat.color.set(e.target.value);
     });
     document.getElementById('intColor').addEventListener('input', e => {
-      const c = new THREE.Color(e.target.value);
-      intMat.color.set(c);
+      intMat.color.set(e.target.value);
     });
 
-    // --- VISTAS ---
     function setView(type) {
       if (type === 'front') {
-        camera.position.set(0, 1.2, 5.5);
+        camera.position.set(0, 1.0, 5.0);
       } else if (type === 'top') {
-        camera.position.set(0, 5, 0.01);
-      } else if (type === 'iso') {
-        camera.position.set(3.8, 3.2, 3.8);
+        camera.position.set(0, 4.5, 0.01);
+      } else {
+        camera.position.set(3.5, 2.8, 3.5);
       }
-      controls.target.set(0, 0.35, 0);
+      controls.target.set(0, 0.25, 0);
       controls.update();
     }
 
@@ -357,8 +326,8 @@
     }
 
     function copyCode() {
-      const fullHTML = document.documentElement.outerHTML;
-      navigator.clipboard.writeText(fullHTML).then(() => {
+      const code = document.documentElement.outerHTML;
+      navigator.clipboard.writeText(code).then(() => {
         document.getElementById('copyMessage').classList.add('show');
         setTimeout(() => document.getElementById('copyMessage').classList.remove('show'), 2500);
       });
