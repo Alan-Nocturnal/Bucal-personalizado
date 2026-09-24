@@ -1,424 +1,525 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <title>Protector Bucal 3D</title>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Configurador 3D — Protector Bucal</title>
+  <!-- Librerías desde CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/geometries/DecalGeometry.js"></script>
+
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; }
-    body { background: #080808; color: #fff; display: flex; flex-direction: column; align-items: center; min-height: 100vh; padding-bottom: 20px; }
-    
-    #viewport {
-      width: 100vw;
-      height: 55vh;
-      background: radial-gradient(circle at center, #111 0%, #000 100%);
-      touch-action: none;
+    :root {
+      --bg: #0a0a0a;
+      --panel: #141414;
+      --borde: #2a2a2a;
+      --acento: #e50914;
+      --texto: #f0f0f0;
+      --texto-sec: #999;
     }
-    
-    .panel {
-      width: 100%;
-      max-width: 380px;
-      padding: 12px;
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Segoe UI', system-ui, sans-serif;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--texto);
+      height: 100vh;
       display: flex;
       flex-direction: column;
-      gap: 10px;
+      overflow: hidden;
     }
 
-    .group {
-      background: #141414;
-      padding: 12px;
-      border-radius: 8px;
-      border: 1px solid #2a2a2a;
+    /* Visor 3D */
+    #canvas-container {
+      flex: 1;
+      position: relative;
+      touch-action: none;
     }
 
-    .group label {
+    canvas {
       display: block;
-      font-size: 0.8rem;
-      color: #aaa;
-      margin-bottom: 6px;
-      font-weight: 600;
+      width: 100%;
+      height: 100%;
     }
 
-    .row { display: flex; gap: 8px; align-items: center; justify-content: space-between; flex-wrap: wrap; }
-    .row-full { width: 100%; margin-top: 8px; }
+    .cargando {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 1.2rem;
+      color: var(--texto-sec);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1rem;
+    }
 
-    input[type="color"] {
-      border: none;
+    .spinner {
       width: 40px;
       height: 40px;
-      border-radius: 6px;
+      border: 3px solid var(--borde);
+      border-top-color: var(--acento);
+      border-radius: 50%;
+      animation: girar 1s linear infinite;
+    }
+
+    @keyframes girar { to { transform: rotate(360deg); } }
+
+    /* Panel lateral */
+    .panel {
+      background: var(--panel);
+      border-top: 1px solid var(--borde);
+      padding: 1.2rem;
+      max-height: 45vh;
+      overflow-y: auto;
+    }
+
+    .panel h2 {
+      font-size: 1rem;
+      margin-bottom: 1rem;
+      color: #fff;
+      border-bottom: 1px solid var(--borde);
+      padding-bottom: 0.5rem;
+    }
+
+    .grupo {
+      margin-bottom: 1.2rem;
+    }
+
+    .fila {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin: 0.6rem 0;
+      gap: 0.8rem;
+    }
+
+    label {
+      font-size: 0.85rem;
+      color: var(--texto-sec);
+      flex-shrink: 0;
+    }
+
+    input[type="color"] {
+      width: 44px;
+      height: 44px;
+      border: none;
+      border-radius: 8px;
       cursor: pointer;
-      background: none;
+      background: transparent;
       padding: 0;
     }
 
     input[type="range"] {
-      width: 100%; accent-color: #e50914;
+      flex: 1;
+      accent-color: var(--acento);
     }
 
     .btn {
-      background: #e50914;
-      color: white;
-      border: none;
-      padding: 12px;
-      border-radius: 6px;
-      font-weight: bold;
-      cursor: pointer;
-      text-align: center;
       width: 100%;
+      padding: 0.85rem;
+      border: none;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
       font-size: 0.9rem;
-      transition: filter 0.2s;
+      transition: all 0.2s;
     }
-    .btn:hover { filter: brightness(1.1); }
 
-    .btn-dark { background: #252525; color: #ddd; }
-    .btn-copy { background: #16a34a; color: #fff; margin-top: 6px; }
+    .btn-primario {
+      background: var(--acento);
+      color: white;
+      margin-bottom: 0.6rem;
+    }
+
+    .btn-primario:hover { filter: brightness(1.1); }
+
+    .btn-peligro {
+      background: #2c1212;
+      color: #ff6b6b;
+      border: 1px solid #441a1a;
+    }
+
+    .btn-peligro:hover { background: #441a1a; }
 
     input[type="file"] { display: none; }
-    .file-btn {
+
+    .subir-label {
       display: block;
       background: #1f1f1f;
-      color: #eee;
       text-align: center;
-      padding: 10px;
-      border-radius: 6px;
-      cursor: pointer;
-      font-size: 0.85rem;
+      padding: 0.9rem;
+      border-radius: 8px;
       border: 1px dashed #444;
+      cursor: pointer;
+      margin-bottom: 0.6rem;
+      font-size: 0.9rem;
     }
 
-    .copy-msg {
-      font-size: 0.75rem;
-      color: #86efac;
-      margin-top: 6px;
-      height: 20px;
-      opacity: 0;
-      transition: opacity 0.3s;
-    }
-    .copy-msg.show { opacity: 1; }
+    .subir-label:hover { border-color: var(--acento); }
 
-    textarea { position: absolute; left: -9999px; }
+    .oculto { display: none !important; }
   </style>
 </head>
 <body>
 
-  <div id="viewport"></div>
-
-  <div class="panel">
-    <div class="group">
-      <label>🎨 Colores</label>
-      <div class="row">
-        <span>Exterior</span>
-        <input type="color" id="extColor" value="#ff0000">
-      </div>
-      <div class="row" style="margin-top: 8px;">
-        <span>Interior / Canaleta</span>
-        <input type="color" id="intColor" value="#000000">
-      </div>
+  <!-- Visor 3D -->
+  <div id="canvas-container">
+    <div class="cargando" id="estado-carga">
+      <div class="spinner"></div>
+      <span>Cargando modelo...</span>
     </div>
-
-    <div class="group">
-      <label>🖼️ Logo Frontal</label>
-      <label for="imgInput" class="file-btn">📁 Subir Imagen / Logo</label>
-      <input type="file" id="imgInput" accept="image/*">
-
-      <div class="row row-full">
-        <span>Tamaño</span>
-        <input type="range" id="logoScale" min="0.3" max="2.5" step="0.05" value="1">
-      </div>
-      <div class="row row-full">
-        <span>Posición Horizontal</span>
-        <input type="range" id="logoX" min="-2" max="2" step="0.05" value="0">
-      </div>
-      <div class="row row-full">
-        <span>Posición Vertical</span>
-        <input type="range" id="logoY" min="-1" max="1.5" step="0.05" value="0.5">
-      </div>
-    </div>
-
-    <div class="row" style="margin-top: 6px;">
-      <button class="btn btn-dark" onclick="setView('front')">👁️ Frente</button>
-      <button class="btn btn-dark" onclick="setView('top')">👁️ Arriba</button>
-      <button class="btn btn-dark" onclick="setView('iso')">👁️ Vista 3D</button>
-    </div>
-
-    <button class="btn" onclick="exportPNG()" style="margin-top: 10px;">💾 Guardar PNG</button>
-    <button class="btn btn-copy" onclick="copyCode()">📋 Copiar Código Completo</button>
-    <div id="copyMessage" class="copy-msg">✅ ¡Código copiado!</div>
   </div>
 
-  <textarea id="fullCode"></textarea>
+  <!-- Panel de controles -->
+  <div class="panel">
+    <h2>🎨 Colores</h2>
+
+    <div class="grupo">
+      <div class="fila">
+        <label>Exterior</label>
+        <input type="color" id="color-exterior" value="#ff0000" />
+      </div>
+      <div class="fila">
+        <label>Interior / Canaleta</label>
+        <input type="color" id="color-interior" value="#000000" />
+      </div>
+    </div>
+
+    <h2>🖼️ Logo / Gráfico</h2>
+
+    <label for="entrada-imagen" class="subir-label">📁 Subir imagen desde equipo</label>
+    <input type="file" id="entrada-imagen" accept="image/*" />
+
+    <div id="controles-logo" class="oculto">
+      <div class="fila">
+        <label>Mover horizontal</label>
+        <input type="range" id="logo-x" min="-1.5" max="1.5" step="0.01" value="0" />
+      </div>
+      <div class="fila">
+        <label>Mover vertical</label>
+        <input type="range" id="logo-y" min="-1.5" max="1.5" step="0.01" value="0" />
+      </div>
+      <div class="fila">
+        <label>Escala</label>
+        <input type="range" id="logo-escala" min="0.3" max="3" step="0.05" value="1" />
+      </div>
+      <div class="fila">
+        <label>Opacidad</label>
+        <input type="range" id="logo-opacidad" min="0" max="1" step="0.05" value="1" />
+      </div>
+      <div class="fila">
+        <label>Modo fusión</label>
+        <select id="modo-fusion" style="background:#1f1f1f; color:#fff; border:none; padding:0.3rem; border-radius:4px;">
+          <option value="normal">Normal</option>
+          <option value="multiply">Multiplicar</option>
+        </select>
+      </div>
+
+      <button class="btn btn-peligro" id="btn-quitar">🗑️ Quitar imagen</button>
+    </div>
+  </div>
 
   <script>
-    const container = document.getElementById('viewport');
-    const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
-    
-    const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
-    renderer.setSize(container.clientWidth, container.clientHeight);
+    // ==========================================================
+    // CONFIGURACIÓN INICIAL Y ESCENA
+    // ==========================================================
+    const contenedor = document.getElementById('canvas-container');
+    const estadoCarga = document.getElementById('estado-carga');
+
+    // Escena
+    const escena = new THREE.Scene();
+    escena.background = new THREE.Color(0x0a0a0a);
+
+    // Cámara
+    const camara = new THREE.PerspectiveCamera(
+      45,
+      contenedor.clientWidth / contenedor.clientHeight,
+      0.1,
+      100
+    );
+    camara.position.set(0, 1.2, 4.5);
+
+    // Renderer
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    renderer.setSize(contenedor.clientWidth, contenedor.clientHeight);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    container.appendChild(renderer.domElement);
+    renderer.outputEncoding = THREE.sRGBEncoding;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.2;
+    contenedor.appendChild(renderer.domElement);
 
-    const controls = new THREE.OrbitControls(camera, renderer.domElement);
-    controls.enableDamping = true;
-    controls.dampingFactor = 0.05;
+    // ==========================================================
+    // CONTROLES DE CÁMARA RESTRINGIDOS
+    // ==========================================================
+    const controles = new THREE.OrbitControls(camara, renderer.domElement);
+    controles.enableDamping = true;
+    controles.dampingFactor = 0.05;
+    controles.enablePan = false; // Sin desplazamiento lateral
 
-    scene.add(new THREE.DirectionalLight(0xffffff, 1.3).position.set(5, 8, 6));
-    scene.add(new THREE.DirectionalLight(0xffffff, 0.5).position.set(-4, 5, -4));
-    scene.add(new THREE.AmbientLight(0xffffff, 0.65));
+    // Limites de visión
+    controles.minAzimuthAngle = -Math.PI * 0.35;  // -63°
+    controles.maxAzimuthAngle = Math.PI * 0.35;   // +63°
+    controles.minPolarAngle = Math.PI * 0.25;      // No ver por debajo
+    controles.maxPolarAngle = Math.PI * 0.65;      // No pasar de arriba
 
-    const extMat = new THREE.MeshStandardMaterial({
-      color: 0xff0000, roughness: 0.35, metalness: 0.05
+    controles.target.set(0, 0.2, 0);
+
+    // ==========================================================
+    // ILUMINACIÓN REALISTA (simula silicona/plástico)
+    // ==========================================================
+    const luzAmbiental = new THREE.AmbientLight(0xffffff, 0.55);
+    escena.add(luzAmbiental);
+
+    const luzPrincipal = new THREE.DirectionalLight(0xffffff, 1.3);
+    luzPrincipal.position.set(3, 4, 5);
+    escena.add(luzPrincipal);
+
+    const luzRelleno = new THREE.DirectionalLight(0xfff4e5, 0.6);
+    luzRelleno.position.set(-4, 3, 3);
+    escena.add(luzRelleno);
+
+    const luzBrillo = new THREE.DirectionalLight(0xffffff, 0.4);
+    luzBrillo.position.set(0, 5, -3);
+    escena.add(luzBrillo);
+
+    // ==========================================================
+    // VARIABLES GLOBALES
+    // ==========================================================
+    let modelo = null;
+    let mallaExterior = null;
+    let mallaInterior = null;
+    let decal = null;
+    let texturaLogo = null;
+
+    // Materiales base
+    const matExteriorBase = new THREE.MeshStandardMaterial({
+      color: 0xff0000,
+      roughness: 0.25,
+      metalness: 0.05
     });
-    const intMat = new THREE.MeshStandardMaterial({
-      color: 0x000000, roughness: 0.4, metalness: 0
+
+    const matInteriorBase = new THREE.MeshStandardMaterial({
+      color: 0x000000,
+      roughness: 0.4,
+      metalness: 0
     });
 
-    const guardGroup = new THREE.Group();
+    // ==========================================================
+    // CARGA DEL MODELO DESDE bucal.glb
+    // ==========================================================
+    const cargadorGLTF = new THREE.GLTFLoader();
 
-    // =========================================================
-    // FORMA BASE: arco suave como el frente de la foto
-    // =========================================================
-    const frontArcPoints = [];
-    for (let i = 0; i <= 60; i++) {
-      const t = i / 60;
-      const angle = (t - 0.5) * Math.PI * 0.85;
-      const radius = 2.35;
-      frontArcPoints.push(new THREE.Vector3(
-        Math.sin(angle) * radius,
-        0,
-        Math.cos(angle) * radius * 0.28 + 1.15
-      ));
-    }
+    cargadorGLTF.load(
+      'bucal.glb',
+      (gltf) => {
+        modelo = gltf.scene;
 
-    const frontCurve = new THREE.CatmullRomCurve3(frontArcPoints, false, 'catmullrom', 0.8);
+        // Ajustar escala y posición según necesidad
+        modelo.scale.set(1, 1, 1);
+        modelo.position.set(0, 0, 0);
 
-    // =========================================================
-    // PERFIL TRANSVERSAL: forma de U gruesa
-    // =========================================================
-    function createUProfile(scale = 1) {
-      const shape = new THREE.Shape();
+        // Identificar mallas por nombre
+        modelo.traverse((hijo) => {
+          if (!hijo.isMesh) return;
 
-      const h = 0.72 * scale;
-      const w = 1.05 * scale;
-      const t = 0.24 * scale;
-      const floor = 0.22 * scale;
+          if (hijo.material.name === 'Exterior' || hijo.name === 'Exterior') {
+            mallaExterior = hijo;
+            mallaExterior.material = matExteriorBase;
+          }
 
-      shape.moveTo(-w / 2, 0);
-      shape.lineTo(-w / 2, h);
-      shape.lineTo(-w / 2 + t, h);
-      shape.lineTo(-w / 2 + t, floor);
-      shape.lineTo(w / 2 - t, floor);
-      shape.lineTo(w / 2 - t, h * 0.78);
-      shape.lineTo(w / 2, h * 0.78);
-      shape.lineTo(w / 2, 0);
+          if (hijo.material.name === 'Interior' || hijo.name === 'Interior') {
+            mallaInterior = hijo;
+            mallaInterior.material = matInteriorBase;
+          }
+        });
 
-      shape.closePath();
-
-      return shape;
-    }
-
-    // =========================================================
-    // PROTECTOR BUCAL
-    // =========================================================
-    function buildMouthguard() {
-      const uShape = createUProfile(1);
-
-      const extrudeSettings = {
-        steps: 160,
-        bevelEnabled: true,
-        bevelSize: 0.035,
-        bevelThickness: 0.035,
-        bevelSegments: 4,
-        extrudePath: frontCurve
-      };
-
-      const geometry = new THREE.ExtrudeGeometry(uShape, extrudeSettings);
-
-      geometry.rotateX(-Math.PI / 2);
-      geometry.rotateZ(Math.PI);
-
-      const mesh = new THREE.Mesh(geometry, extMat);
-      return mesh;
-    }
-
-    // =========================================================
-    // CANALETA
-    // =========================================================
-    function buildInnerChannel() {
-      const uShape = createUProfile(0.88);
-
-      const extrudeSettings = {
-        steps: 160,
-        bevelEnabled: true,
-        bevelSize: 0.025,
-        bevelThickness: 0.025,
-        bevelSegments: 3,
-        extrudePath: frontCurve
-      };
-
-      const geometry = new THREE.ExtrudeGeometry(uShape, extrudeSettings);
-
-      geometry.rotateX(-Math.PI / 2);
-      geometry.rotateZ(Math.PI);
-      geometry.translate(0, 0.02, 0);
-
-      const mesh = new THREE.Mesh(geometry, intMat);
-      return mesh;
-    }
-
-    // =========================================================
-    // SUPERFICIE FRONTAL CURVA PARA LOGO
-    // =========================================================
-    function buildFrontLogoSurface() {
-      const width = 2.45;
-      const height = 0.85;
-      const radius = 2.35;
-
-      const geometry = new THREE.PlaneGeometry(width, height, 32, 16);
-
-      const positions = geometry.attributes.position;
-
-      for (let i = 0; i < positions.count; i++) {
-        const x = positions.getX(i);
-        const y = positions.getY(i);
-
-        const angle = x / radius;
-        const z = Math.cos(angle) * radius - radius;
-
-        positions.setZ(i, z + 1.18);
-      }
-
-      geometry.computeVertexNormals();
-
-      const material = new THREE.MeshBasicMaterial({
-        color: 0xffffff,
-        transparent: true,
-        opacity: 0,
-        side: THREE.DoubleSide
-      });
-
-      const mesh = new THREE.Mesh(geometry, material);
-      return mesh;
-    }
-
-    guardGroup.add(buildMouthguard());
-    guardGroup.add(buildInnerChannel());
-
-    const frontLogoSurface = buildFrontLogoSurface();
-    guardGroup.add(frontLogoSurface);
-
-    scene.add(guardGroup);
-
-    // =========================================================
-    // LOGO ADAPTADO A LA SUPERFICIE FRONTAL
-    // =========================================================
-    let logoMesh = null;
-    const logoPos = { s: 1, x: 0, y: 0.5 };
-
-    function updateLogo() {
-      if (!logoMesh) return;
-
-      logoMesh.scale.setScalar(logoPos.s);
-      logoMesh.position.set(logoPos.x, logoPos.y, 0);
-
-      frontLogoSurface.add(logoMesh);
-    }
-
-    document.getElementById('imgInput').addEventListener('change', e => {
-      const file = e.target.files[0];
-      if (!file) return;
-      const img = new Image();
-      img.onload = () => {
-        const tex = new THREE.Texture(img);
-        tex.needsUpdate = true;
-
-        if (!logoMesh) {
-          logoMesh = new THREE.Mesh(
-            new THREE.PlaneGeometry(2.1, 0.72),
-            new THREE.MeshBasicMaterial({
-              map: tex,
-              transparent: true,
-              depthWrite: false
-            })
-          );
-
-          logoMesh.position.z = 0.02;
-
-          frontLogoSurface.add(logoMesh);
-        } else {
-          logoMesh.material.map = tex;
-          logoMesh.material.needsUpdate = true;
+        // Mensaje si no se encontraron los nombres
+        if (!mallaExterior && !mallaInterior) {
+          console.warn('⚠️ No se encontraron mallas con nombres "Exterior" / "Interior". Se aplican materiales a toda la malla.');
+          modelo.traverse((hijo) => {
+            if (!hijo.isMesh) return;
+            hijo.material = matExteriorBase;
+          });
         }
 
-        updateLogo();
-        renderer.render(scene, camera);
-      };
-      img.src = URL.createObjectURL(file);
-    });
-
-    document.getElementById('logoScale').addEventListener('input', e => {
-      logoPos.s = +e.target.value; updateLogo();
-    });
-    document.getElementById('logoX').addEventListener('input', e => {
-      logoPos.x = +e.target.value; updateLogo();
-    });
-    document.getElementById('logoY').addEventListener('input', e => {
-      logoPos.y = +e.target.value; updateLogo();
-    });
-
-    // =========================================================
-    // CONTROLES
-    // =========================================================
-    document.getElementById('extColor').addEventListener('input', e => {
-      extMat.color.set(e.target.value);
-    });
-    document.getElementById('intColor').addEventListener('input', e => {
-      intMat.color.set(e.target.value);
-    });
-
-    function setView(type) {
-      if (type === 'front') {
-        camera.position.set(0, 1.0, 5.0);
-      } else if (type === 'top') {
-        camera.position.set(0, 4.5, 0.01);
-      } else {
-        camera.position.set(3.5, 2.8, 3.5);
+        escena.add(modelo);
+        estadoCarga.remove();
+      },
+      (progreso) => {
+        const porcentaje = Math.round((progreso.loaded / progreso.total) * 100);
+        estadoCarga.querySelector('span').textContent = `Cargando modelo... ${porcentaje}%`;
+      },
+      (error) => {
+        estadoCarga.querySelector('span').textContent = '❌ Error al cargar "bucal.glb"';
+        console.error(error);
       }
-      controls.target.set(0, 0.25, 0);
-      controls.update();
-    }
+    );
 
-    function exportPNG() {
-      renderer.render(scene, camera);
-      const a = document.createElement('a');
-      a.download = 'protector-bucal.png';
-      href = renderer.domElement.toDataURL('image/png');
-      a.click();
-    }
+    // ==========================================================
+    // CONTROLES DE COLOR
+    // ==========================================================
+    document.getElementById('color-exterior').addEventListener('input', (e) => {
+      const color = new THREE.Color(e.target.value);
+      matExteriorBase.color.set(color);
+    });
 
-    function copyCode() {
-      const code = document.documentElement.outerHTML;
-      navigator.clipboard.writeText(code).then(() => {
-        document.getElementById('copyMessage').classList.add('show');
-        setTimeout(() => document.getElementById('copyMessage').classList.remove('show'), 2500);
+    document.getElementById('color-interior').addEventListener('input', (e) => {
+      const color = new THREE.Color(e.target.value);
+      matInteriorBase.color.set(color);
+    });
+
+    // ==========================================================
+    // GESTIÓN DE IMAGEN / LOGO — DecalGeometry
+    // ==========================================================
+    const entradaImagen = document.getElementById('entrada-imagen');
+    const controlesLogo = document.getElementById('controles-logo');
+    const btnQuitar = document.getElementById('btn-quitar');
+
+    // Parámetros del logo
+    const configLogo = {
+      x: 0,
+      y: 0,
+      escala: 1,
+      opacidad: 1,
+      fusion: 'normal'
+    };
+
+    entradaImagen.addEventListener('change', (e) => {
+      const archivo = e.target.files[0];
+      if (!archivo) return;
+
+      const lector = new FileReader();
+      lector.onload = (evento) => {
+        const img = new Image();
+        img.onload = () => {
+          // Crear textura
+          if (texturaLogo) texturaLogo.dispose();
+          texturaLogo = new THREE.Texture(img);
+          texturaLogo.needsUpdate = true;
+
+          controlesLogo.classList.remove('oculto');
+          actualizarDecal();
+        };
+        img.src = evento.target.result;
+      };
+      lector.readAsDataURL(archivo);
+    });
+
+    // Actualizar decal con controles
+    function actualizarDecal() {
+      if (!mallaExterior || !texturaLogo) return;
+
+      // Eliminar anterior
+      if (decal) {
+        escena.remove(decal);
+        decal.material.map?.dispose();
+        decal.geometry?.dispose();
+      }
+
+      // Material del decal
+      const matDecal = new THREE.MeshPhongMaterial({
+        map: texturaLogo,
+        transparent: true,
+        opacity: configLogo.opacidad,
+        depthWrite: false,
+        polygonOffset: true,
+        polygonOffsetFactor: -4,
+        polygonOffsetUnits: -4
       });
+
+      // Modo de fusión
+      if (configLogo.fusion === 'multiply') {
+        matDecal.blending = THREE.MultiplyBlending;
+      } else {
+        matDecal.blending = THREE.NormalBlending;
+      }
+
+      // Tamaño del decal
+      const tam = 0.8 * configLogo.escala;
+      const tamX = tam * (texturaLogo.image.width / Math.max(texturaLogo.image.height, 1));
+      const tamY = tam;
+
+      // Posición proyectada sobre la cara frontal
+      const posicion = new THREE.Vector3(configLogo.x, configLogo.y, 1.2);
+      const direccion = new THREE.Vector3(0, 0, 1);
+      const orientacion = new THREE.Euler(0, 0, 0);
+
+      // Crear geometría proyectada
+      const geoDecal = new THREE.DecalGeometry(
+        mallaExterior,
+        posicion,
+        direccion,
+        orientacion,
+        new THREE.Vector3(tamX, tamY, 1)
+      );
+
+      decal = new THREE.Mesh(geoDecal, matDecal);
+      escena.add(decal);
     }
 
-    setView('front');
-    function animate() {
-      requestAnimationFrame(animate);
-      controls.update();
-      renderer.render(scene, camera);
+    // Conectar controles
+    document.getElementById('logo-x').addEventListener('input', (e) => {
+      configLogo.x = +e.target.value;
+      actualizarDecal();
+    });
+
+    document.getElementById('logo-y').addEventListener('input', (e) => {
+      configLogo.y = +e.target.value;
+      actualizarDecal();
+    });
+
+    document.getElementById('logo-escala').addEventListener('input', (e) => {
+      configLogo.escala = +e.target.value;
+      actualizarDecal();
+    });
+
+    document.getElementById('logo-opacidad').addEventListener('input', (e) => {
+      configLogo.opacidad = +e.target.value;
+      actualizarDecal();
+    });
+
+    document.getElementById('modo-fusion').addEventListener('change', (e) => {
+      configLogo.fusion = e.target.value;
+      actualizarDecal();
+    });
+
+    // Quitar imagen
+    btnQuitar.addEventListener('click', () => {
+      if (decal) {
+        escena.remove(decal);
+        decal = null;
+      }
+      if (texturaLogo) {
+        texturaLogo.dispose();
+        texturaLogo = null;
+      }
+      entradaImagen.value = '';
+      controlesLogo.classList.add('oculto');
+    });
+
+    // ==========================================================
+    // ANIMACIÓN Y REDIMENSIONADO
+    // ==========================================================
+    function animar() {
+      requestAnimationFrame(animar);
+      controles.update();
+      renderer.render(escena, camara);
     }
-    animate();
+    animar();
 
     window.addEventListener('resize', () => {
-      camera.aspect = container.clientWidth / container.clientHeight;
-      camera.updateProjectionMatrix();
-      renderer.setSize(container.clientWidth, container.clientHeight);
+      camara.aspect = contenedor.clientWidth / contenedor.clientHeight;
+      camara.updateProjectionMatrix();
+      renderer.setSize(contenedor.clientWidth, contenedor.clientHeight);
     });
   </script>
 </body>
